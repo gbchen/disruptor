@@ -25,27 +25,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @param <T> event implementation storing the details for the work to processed.
  */
-public final class WorkProcessor<T>
-    implements EventProcessor
-{
-    private final AtomicBoolean running = new AtomicBoolean(false);
-    private final Sequence sequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    private final RingBuffer<T> ringBuffer;
-    private final SequenceBarrier sequenceBarrier;
-    private final WorkHandler<? super T> workHandler;
+public final class WorkProcessor<T> implements EventProcessor {
+
+    private final AtomicBoolean               running       = new AtomicBoolean(false);
+    private final Sequence                    sequence      = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    private final RingBuffer<T>               ringBuffer;
+    private final SequenceBarrier             sequenceBarrier;
+    private final WorkHandler<? super T>      workHandler;
     private final ExceptionHandler<? super T> exceptionHandler;
-    private final Sequence workSequence;
+    private final Sequence                    workSequence;
 
-    private final EventReleaser eventReleaser = new EventReleaser()
-    {
-        @Override
-        public void release()
-        {
-            sequence.set(Long.MAX_VALUE);
-        }
-    };
+    private final EventReleaser               eventReleaser = new EventReleaser() {
 
-    private final TimeoutHandler timeoutHandler;
+                                                                @Override
+                                                                public void release() {
+                                                                    sequence.set(Long.MAX_VALUE);
+                                                                }
+                                                            };
+
+    private final TimeoutHandler              timeoutHandler;
 
     /**
      * Construct a {@link WorkProcessor}.
@@ -57,21 +55,16 @@ public final class WorkProcessor<T>
      * @param workSequence     from which to claim the next event to be worked on.  It should always be initialised
      *                         as {@link Sequencer#INITIAL_CURSOR_VALUE}
      */
-    public WorkProcessor(
-        final RingBuffer<T> ringBuffer,
-        final SequenceBarrier sequenceBarrier,
-        final WorkHandler<? super T> workHandler,
-        final ExceptionHandler<? super T> exceptionHandler,
-        final Sequence workSequence)
-    {
+    public WorkProcessor(final RingBuffer<T> ringBuffer, final SequenceBarrier sequenceBarrier,
+                         final WorkHandler<? super T> workHandler, final ExceptionHandler<? super T> exceptionHandler,
+                         final Sequence workSequence) {
         this.ringBuffer = ringBuffer;
         this.sequenceBarrier = sequenceBarrier;
         this.workHandler = workHandler;
         this.exceptionHandler = exceptionHandler;
         this.workSequence = workSequence;
 
-        if (this.workHandler instanceof EventReleaseAware)
-        {
+        if (this.workHandler instanceof EventReleaseAware) {
             ((EventReleaseAware) this.workHandler).setEventReleaser(eventReleaser);
         }
 
@@ -79,21 +72,18 @@ public final class WorkProcessor<T>
     }
 
     @Override
-    public Sequence getSequence()
-    {
+    public Sequence getSequence() {
         return sequence;
     }
 
     @Override
-    public void halt()
-    {
+    public void halt() {
         running.set(false);
         sequenceBarrier.alert();
     }
 
     @Override
-    public boolean isRunning()
-    {
+    public boolean isRunning() {
         return running.get();
     }
 
@@ -103,64 +93,55 @@ public final class WorkProcessor<T>
      * @throws IllegalStateException if this processor is already running
      */
     @Override
-    public void run()
-    {
-        if (!running.compareAndSet(false, true))
-        {
+    public void run() {
+        if (!running.compareAndSet(false, true)) {
             throw new IllegalStateException("Thread is already running");
         }
         sequenceBarrier.clearAlert();
 
         notifyStart();
 
+        //标志位，用来标志一次消费过程，此标志位在代码方面用的很巧妙，把两次执行揉成一段代码
         boolean processedSequence = true;
+        //用来缓存消费者可以使用的RingBuffer最大序列号
         long cachedAvailableSequence = Long.MIN_VALUE;
+        //记录被分配的WorkSequence的序列号，也是去RingBuffer取数据的序列号
         long nextSequence = sequence.get();
         T event = null;
-        while (true)
-        {
-            try
-            {
+        while (true) {
+            try {
                 // if previous sequence was processed - fetch the next sequence and set
                 // that we have successfully processed the previous sequence
                 // typically, this will be true
                 // this prevents the sequence getting too far forward if an exception
                 // is thrown from the WorkHandler
-                if (processedSequence)
-                {
+                if (processedSequence) {
                     processedSequence = false;
-                    do
-                    {
+                    //使用CAS算法从WorkPool的序列WorkSequence取得可用序列nextSequence
+                    do {
+                        //workSequence 是消费者消费到的位置
                         nextSequence = workSequence.get() + 1L;
                         sequence.set(nextSequence - 1L);
-                    }
-                    while (!workSequence.compareAndSet(nextSequence - 1L, nextSequence));
+                    } while (!workSequence.compareAndSet(nextSequence - 1L, nextSequence));
                 }
 
-                if (cachedAvailableSequence >= nextSequence)
-                {
+                //如果可使用的最大序列号cachedAvaliableSequence大于等于我们要使用的序列号nextSequence，直接从RingBuffer取数据；不然进入else
+                if (cachedAvailableSequence >= nextSequence) {
+                    //可以满足消费的条件，根据序列号去RingBuffer去读取数据
                     event = ringBuffer.get(nextSequence);
                     workHandler.onEvent(event);
+                    //一次消费结束，设置标志位
                     processedSequence = true;
-                }
-                else
-                {
+                } else {//等待生产者生产，获取到最大的可以使用的序列号
                     cachedAvailableSequence = sequenceBarrier.waitFor(nextSequence);
                 }
-            }
-            catch (final TimeoutException e)
-            {
+            } catch (final TimeoutException e) {
                 notifyTimeout(sequence.get());
-            }
-            catch (final AlertException ex)
-            {
-                if (!running.get())
-                {
+            } catch (final AlertException ex) {
+                if (!running.get()) {
                     break;
                 }
-            }
-            catch (final Throwable ex)
-            {
+            } catch (final Throwable ex) {
                 // handle, mark as processed, unless the exception handler threw an exception
                 exceptionHandler.handleEventException(ex, nextSequence, event);
                 processedSequence = true;
@@ -172,46 +153,31 @@ public final class WorkProcessor<T>
         running.set(false);
     }
 
-    private void notifyTimeout(final long availableSequence)
-    {
-        try
-        {
-            if (timeoutHandler != null)
-            {
+    private void notifyTimeout(final long availableSequence) {
+        try {
+            if (timeoutHandler != null) {
                 timeoutHandler.onTimeout(availableSequence);
             }
-        }
-        catch (Throwable e)
-        {
+        } catch (Throwable e) {
             exceptionHandler.handleEventException(e, availableSequence, null);
         }
     }
 
-    private void notifyStart()
-    {
-        if (workHandler instanceof LifecycleAware)
-        {
-            try
-            {
+    private void notifyStart() {
+        if (workHandler instanceof LifecycleAware) {
+            try {
                 ((LifecycleAware) workHandler).onStart();
-            }
-            catch (final Throwable ex)
-            {
+            } catch (final Throwable ex) {
                 exceptionHandler.handleOnStartException(ex);
             }
         }
     }
 
-    private void notifyShutdown()
-    {
-        if (workHandler instanceof LifecycleAware)
-        {
-            try
-            {
+    private void notifyShutdown() {
+        if (workHandler instanceof LifecycleAware) {
+            try {
                 ((LifecycleAware) workHandler).onShutdown();
-            }
-            catch (final Throwable ex)
-            {
+            } catch (final Throwable ex) {
                 exceptionHandler.handleOnShutdownException(ex);
             }
         }

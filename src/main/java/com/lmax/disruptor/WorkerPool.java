@@ -46,24 +46,17 @@ public final class WorkerPool<T>
      * @param workHandlers     to distribute the work load across.
      */
     @SafeVarargs
-    public WorkerPool(
-        final RingBuffer<T> ringBuffer,
-        final SequenceBarrier sequenceBarrier,
-        final ExceptionHandler<? super T> exceptionHandler,
-        final WorkHandler<? super T>... workHandlers)
-    {
+    public WorkerPool(final RingBuffer<T> ringBuffer,
+                      final SequenceBarrier sequenceBarrier,
+                      final ExceptionHandler<? super T> exceptionHandler,
+                      final WorkHandler<? super T>... workHandlers) {
         this.ringBuffer = ringBuffer;
         final int numWorkers = workHandlers.length;
         workProcessors = new WorkProcessor[numWorkers];
 
-        for (int i = 0; i < numWorkers; i++)
-        {
-            workProcessors[i] = new WorkProcessor<>(
-                ringBuffer,
-                sequenceBarrier,
-                workHandlers[i],
-                exceptionHandler,
-                workSequence);
+        for (int i = 0; i < numWorkers; i++) {
+            workProcessors[i] = new WorkProcessor<>(ringBuffer, sequenceBarrier, workHandlers[i], exceptionHandler,
+                                                    workSequence);
         }
     }
 
@@ -124,18 +117,15 @@ public final class WorkerPool<T>
      * @return the {@link RingBuffer} used for the work queue.
      * @throws IllegalStateException if the pool has already been started and not halted yet
      */
-    public RingBuffer<T> start(final Executor executor)
-    {
-        if (!started.compareAndSet(false, true))
-        {
+    public RingBuffer<T> start(final Executor executor) {
+        if (!started.compareAndSet(false, true)) {
             throw new IllegalStateException("WorkerPool has already been started and cannot be restarted until halted.");
         }
 
         final long cursor = ringBuffer.getCursor();
         workSequence.set(cursor);
 
-        for (WorkProcessor<?> processor : workProcessors)
-        {
+        for (WorkProcessor<?> processor : workProcessors) {
             processor.getSequence().set(cursor);
             executor.execute(processor);
         }

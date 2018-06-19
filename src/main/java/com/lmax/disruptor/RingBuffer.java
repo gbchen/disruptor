@@ -21,31 +21,25 @@ import sun.misc.Unsafe;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.util.Util;
 
-abstract class RingBufferPad
-{
+abstract class RingBufferPad {
+
     protected long p1, p2, p3, p4, p5, p6, p7;
 }
 
-abstract class RingBufferFields<E> extends RingBufferPad
-{
-    private static final int BUFFER_PAD;
-    private static final long REF_ARRAY_BASE;
-    private static final int REF_ELEMENT_SHIFT;
+abstract class RingBufferFields<E> extends RingBufferPad {
+
+    private static final int    BUFFER_PAD;
+    private static final long   REF_ARRAY_BASE;
+    private static final int    REF_ELEMENT_SHIFT;
     private static final Unsafe UNSAFE = Util.getUnsafe();
 
-    static
-    {
+    static {
         final int scale = UNSAFE.arrayIndexScale(Object[].class);
-        if (4 == scale)
-        {
+        if (4 == scale) {
             REF_ELEMENT_SHIFT = 2;
-        }
-        else if (8 == scale)
-        {
+        } else if (8 == scale) {
             REF_ELEMENT_SHIFT = 3;
-        }
-        else
-        {
+        } else {
             throw new IllegalStateException("Unknown pointer size");
         }
         BUFFER_PAD = 128 / scale;
@@ -53,24 +47,19 @@ abstract class RingBufferFields<E> extends RingBufferPad
         REF_ARRAY_BASE = UNSAFE.arrayBaseOffset(Object[].class) + (BUFFER_PAD << REF_ELEMENT_SHIFT);
     }
 
-    private final long indexMask;
-    private final Object[] entries;
-    protected final int bufferSize;
+    private final long        indexMask;
+    private final Object[]    entries;
+    protected final int       bufferSize;
     protected final Sequencer sequencer;
 
-    RingBufferFields(
-        EventFactory<E> eventFactory,
-        Sequencer sequencer)
-    {
+    RingBufferFields(EventFactory<E> eventFactory, Sequencer sequencer) {
         this.sequencer = sequencer;
         this.bufferSize = sequencer.getBufferSize();
 
-        if (bufferSize < 1)
-        {
+        if (bufferSize < 1) {
             throw new IllegalArgumentException("bufferSize must not be less than 1");
         }
-        if (Integer.bitCount(bufferSize) != 1)
-        {
+        if (Integer.bitCount(bufferSize) != 1) {
             throw new IllegalArgumentException("bufferSize must be a power of 2");
         }
 
@@ -79,10 +68,8 @@ abstract class RingBufferFields<E> extends RingBufferPad
         fill(eventFactory);
     }
 
-    private void fill(EventFactory<E> eventFactory)
-    {
-        for (int i = 0; i < bufferSize; i++)
-        {
+    private void fill(EventFactory<E> eventFactory) {
+        for (int i = 0; i < bufferSize; i++) {
             entries[BUFFER_PAD + i] = eventFactory.newInstance();
         }
     }
@@ -114,10 +101,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @param sequencer    sequencer to handle the ordering of events moving through the RingBuffer.
      * @throws IllegalArgumentException if bufferSize is less than 1 or not a power of 2
      */
-    RingBuffer(
-        EventFactory<E> eventFactory,
-        Sequencer sequencer)
-    {
+    RingBuffer(EventFactory<E> eventFactory, Sequencer sequencer) {
         super(eventFactory, sequencer);
     }
 
@@ -125,18 +109,15 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * Create a new multiple producer RingBuffer with the specified wait strategy.
      *
      * @param <E> Class of the event stored in the ring buffer.
-     * @param factory      used to create the events within the ring buffer.
-     * @param bufferSize   number of elements to create within the ring buffer.
+     * @param factory used to create the events within the ring buffer.
+     * @param bufferSize number of elements to create within the ring buffer.
      * @param waitStrategy used to determine how to wait for new elements to become available.
      * @return a constructed ring buffer.
      * @throws IllegalArgumentException if bufferSize is less than 1 or not a power of 2
      * @see MultiProducerSequencer
      */
-    public static <E> RingBuffer<E> createMultiProducer(
-        EventFactory<E> factory,
-        int bufferSize,
-        WaitStrategy waitStrategy)
-    {
+    public static <E> RingBuffer<E> createMultiProducer(EventFactory<E> factory, int bufferSize,
+                                                        WaitStrategy waitStrategy) {
         MultiProducerSequencer sequencer = new MultiProducerSequencer(bufferSize, waitStrategy);
 
         return new RingBuffer<E>(factory, sequencer);
@@ -168,11 +149,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @throws IllegalArgumentException if bufferSize is less than 1 or not a power of 2
      * @see SingleProducerSequencer
      */
-    public static <E> RingBuffer<E> createSingleProducer(
-        EventFactory<E> factory,
-        int bufferSize,
-        WaitStrategy waitStrategy)
-    {
+    public static <E> RingBuffer<E> createSingleProducer(EventFactory<E> factory, int bufferSize, WaitStrategy waitStrategy) {
         SingleProducerSequencer sequencer = new SingleProducerSequencer(bufferSize, waitStrategy);
 
         return new RingBuffer<E>(factory, sequencer);
@@ -188,8 +165,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @throws IllegalArgumentException if <tt>bufferSize</tt> is less than 1 or not a power of 2
      * @see MultiProducerSequencer
      */
-    public static <E> RingBuffer<E> createSingleProducer(EventFactory<E> factory, int bufferSize)
-    {
+    public static <E> RingBuffer<E> createSingleProducer(EventFactory<E> factory, int bufferSize) {
         return createSingleProducer(factory, bufferSize, new BlockingWaitStrategy());
     }
 
@@ -213,6 +189,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     {
         switch (producerType)
         {
+            //创建Sequencer并实例化到RingBuffer中
             case SINGLE:
                 return createSingleProducer(factory, bufferSize, waitStrategy);
             case MULTI:
@@ -238,14 +215,14 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @return the event for the given sequence
      */
     @Override
-    public E get(long sequence)
-    {
+    public E get(long sequence) {
         return elementAt(sequence);
     }
 
     /**
-     * Increment and return the next sequence for the ring buffer.  Calls of this
-     * method should ensure that they always publish the sequence afterward.  E.g.
+     * Increment and return the next sequence for the ring buffer. Calls of this method should ensure that they always
+     * publish the sequence afterward. E.g.
+     *
      * <pre>
      * long sequence = ringBuffer.next();
      * try {
@@ -261,8 +238,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @see RingBuffer#get(long)
      */
     @Override
-    public long next()
-    {
+    public long next() {
         return sequencer.next();
     }
 
@@ -492,9 +468,10 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#publishEvent(com.lmax.disruptor.EventTranslatorOneArg, A)
      */
     @Override
-    public <A> void publishEvent(EventTranslatorOneArg<E, A> translator, A arg0)
-    {
+    public <A> void publishEvent(EventTranslatorOneArg<E, A> translator, A arg0) {
+        //获取RingBuffer下一个可操作的序列
         final long sequence = sequencer.next();
+        //把数据set到队列，设置cursor的序列
         translateAndPublish(translator, sequence, arg0);
     }
 
@@ -503,16 +480,12 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#tryPublishEvent(com.lmax.disruptor.EventTranslatorOneArg, A)
      */
     @Override
-    public <A> boolean tryPublishEvent(EventTranslatorOneArg<E, A> translator, A arg0)
-    {
-        try
-        {
+    public <A> boolean tryPublishEvent(EventTranslatorOneArg<E, A> translator, A arg0) {
+        try {
             final long sequence = sequencer.tryNext();
             translateAndPublish(translator, sequence, arg0);
             return true;
-        }
-        catch (InsufficientCapacityException e)
-        {
+        } catch (InsufficientCapacityException e) {
             return false;
         }
     }
@@ -659,8 +632,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#publishEvents(com.lmax.disruptor.EventTranslatorOneArg, A[])
      */
     @Override
-    public <A> void publishEvents(EventTranslatorOneArg<E, A> translator, A[] arg0)
-    {
+    public <A> void publishEvents(EventTranslatorOneArg<E, A> translator, A[] arg0) {
         publishEvents(translator, 0, arg0.length, arg0);
     }
 
@@ -1041,22 +1013,16 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
         }
     }
 
-    private <A> void translateAndPublishBatch(
-        final EventTranslatorOneArg<E, A> translator, final A[] arg0,
-        int batchStartsAt, final int batchSize, final long finalSequence)
-    {
+    private <A> void translateAndPublishBatch(final EventTranslatorOneArg<E, A> translator, final A[] arg0,
+                                              int batchStartsAt, final int batchSize, final long finalSequence) {
         final long initialSequence = finalSequence - (batchSize - 1);
-        try
-        {
+        try {
             long sequence = initialSequence;
             final int batchEndsAt = batchStartsAt + batchSize;
-            for (int i = batchStartsAt; i < batchEndsAt; i++)
-            {
+            for (int i = batchStartsAt; i < batchEndsAt; i++) {
                 translator.translateTo(get(sequence), sequence++, arg0[i]);
             }
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(initialSequence, finalSequence);
         }
     }

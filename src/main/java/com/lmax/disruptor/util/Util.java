@@ -60,10 +60,8 @@ public final class Util
      * @return the smaller of minimum sequence value found in {@code sequences} and {@code minimum};
      * {@code minimum} if {@code sequences} is empty
      */
-    public static long getMinimumSequence(final Sequence[] sequences, long minimum)
-    {
-        for (int i = 0, n = sequences.length; i < n; i++)
-        {
+    public static long getMinimumSequence(final Sequence[] sequences, long minimum) {
+        for (int i = 0, n = sequences.length; i < n; i++) {
             long value = sequences[i].get();
             minimum = Math.min(minimum, value);
         }

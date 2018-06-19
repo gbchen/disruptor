@@ -120,8 +120,7 @@ public class Sequence extends RhsPadding
      *
      * @param value The new value for the sequence.
      */
-    public void setVolatile(final long value)
-    {
+    public void setVolatile(final long value) {
         UNSAFE.putLongVolatile(this, VALUE_OFFSET, value);
     }
 

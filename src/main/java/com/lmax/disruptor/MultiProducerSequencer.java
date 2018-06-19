@@ -30,19 +30,19 @@ import com.lmax.disruptor.util.Util;
  * to {@link Sequencer#next()}, to determine the highest available sequence that can be read, then
  * {@link Sequencer#getHighestPublishedSequence(long, long)} should be used.</p>
  */
-public final class MultiProducerSequencer extends AbstractSequencer
-{
-    private static final Unsafe UNSAFE = Util.getUnsafe();
-    private static final long BASE = UNSAFE.arrayBaseOffset(int[].class);
-    private static final long SCALE = UNSAFE.arrayIndexScale(int[].class);
+public final class MultiProducerSequencer extends AbstractSequencer {
 
-    private final Sequence gatingSequenceCache = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    private static final Unsafe UNSAFE              = Util.getUnsafe();
+    private static final long   BASE                = UNSAFE.arrayBaseOffset(int[].class);
+    private static final long   SCALE               = UNSAFE.arrayIndexScale(int[].class);
+
+    private final Sequence      gatingSequenceCache = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
 
     // availableBuffer tracks the state of each ringbuffer slot
     // see below for more details on the approach
-    private final int[] availableBuffer;
-    private final int indexMask;
-    private final int indexShift;
+    private final int[]         availableBuffer;
+    private final int           indexMask;
+    private final int           indexShift;
 
     /**
      * Construct a Sequencer with the selected wait strategy and buffer size.
@@ -50,8 +50,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
      * @param bufferSize   the size of the buffer that this will sequence over.
      * @param waitStrategy for those waiting on sequences.
      */
-    public MultiProducerSequencer(int bufferSize, final WaitStrategy waitStrategy)
-    {
+    public MultiProducerSequencer(int bufferSize, final WaitStrategy waitStrategy) {
         super(bufferSize, waitStrategy);
         availableBuffer = new int[bufferSize];
         indexMask = bufferSize - 1;
@@ -63,23 +62,19 @@ public final class MultiProducerSequencer extends AbstractSequencer
      * @see Sequencer#hasAvailableCapacity(int)
      */
     @Override
-    public boolean hasAvailableCapacity(final int requiredCapacity)
-    {
+    public boolean hasAvailableCapacity(final int requiredCapacity) {
         return hasAvailableCapacity(gatingSequences, requiredCapacity, cursor.get());
     }
 
-    private boolean hasAvailableCapacity(Sequence[] gatingSequences, final int requiredCapacity, long cursorValue)
-    {
+    private boolean hasAvailableCapacity(Sequence[] gatingSequences, final int requiredCapacity, long cursorValue) {
         long wrapPoint = (cursorValue + requiredCapacity) - bufferSize;
         long cachedGatingSequence = gatingSequenceCache.get();
 
-        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > cursorValue)
-        {
+        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > cursorValue) {
             long minSequence = Util.getMinimumSequence(gatingSequences, cursorValue);
             gatingSequenceCache.set(minSequence);
 
-            if (wrapPoint > minSequence)
-            {
+            if (wrapPoint > minSequence) {
                 return false;
             }
         }
@@ -91,8 +86,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
      * @see Sequencer#claim(long)
      */
     @Override
-    public void claim(long sequence)
-    {
+    public void claim(long sequence) {
         cursor.set(sequence);
     }
 
@@ -100,8 +94,7 @@ public final class MultiProducerSequencer extends AbstractSequencer
      * @see Sequencer#next()
      */
     @Override
-    public long next()
-    {
+    public long next() {
         return next(1);
     }
 
@@ -109,42 +102,42 @@ public final class MultiProducerSequencer extends AbstractSequencer
      * @see Sequencer#next(int)
      */
     @Override
-    public long next(int n)
-    {
-        if (n < 1)
-        {
+    public long next(int n) {
+        if (n < 1) {
             throw new IllegalArgumentException("n must be > 0");
         }
 
+        //生产者当前写入到的序列号
         long current;
+        //下一个序列号
         long next;
 
-        do
-        {
+        do {
             current = cursor.get();
             next = current + n;
 
             long wrapPoint = next - bufferSize;
+            //cachedGatingSequence, gatingSequenceCache这两个变量记录着上一次获取消费者中最小的消费序列号
             long cachedGatingSequence = gatingSequenceCache.get();
 
-            if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current)
-            {
+            if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current) {
+                //获取最新的消费者最小的消费序号
                 long gatingSequence = Util.getMinimumSequence(gatingSequences, current);
 
-                if (wrapPoint > gatingSequence)
-                {
+                //依然不能满足写入条件(写入会覆盖未消费的数据)
+                if (wrapPoint > gatingSequence) {
+                    //锁一会，结束本次循环，重来
                     LockSupport.parkNanos(1); // TODO, should we spin based on the wait strategy?
                     continue;
                 }
 
+                //缓存一下消费者中最小的消费序列号
                 gatingSequenceCache.set(gatingSequence);
-            }
-            else if (cursor.compareAndSet(current, next))
-            {
+            } else if (cursor.compareAndSet(current, next)) {
+                //满足消费条件，有空余的空间让生产者写入，使用CAS算法，成功则跳出本次循环，不成功则重来
                 break;
             }
-        }
-        while (true);
+        } while (true);
 
         return next;
     }
