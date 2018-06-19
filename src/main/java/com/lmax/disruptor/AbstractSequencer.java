@@ -21,9 +21,10 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import com.lmax.disruptor.util.Util;
 
 /**
+ *
  * Base class for the various sequencer types (single/multi).  Provides
- * common functionality like the management of gating sequences (add/remove) and
- * ownership of the current cursor.
+ * common functionality like the management of gating(控制) sequences (add/remove) and
+ * ownership(所有权) of the current cursor.
  */
 public abstract class AbstractSequencer implements Sequencer
 {

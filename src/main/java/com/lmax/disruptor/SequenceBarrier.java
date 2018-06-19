@@ -17,6 +17,8 @@ package com.lmax.disruptor;
 
 
 /**
+ * 序列屏障，就是Sequence和RingBuffer交互的一个屏障，单个生产者时，生产者不需要SequenceBarrier
+ *
  * Coordination barrier for tracking the cursor for publishers and sequence of
  * dependent {@link EventProcessor}s for processing a data structure
  */

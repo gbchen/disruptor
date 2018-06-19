@@ -16,6 +16,8 @@
 package com.lmax.disruptor;
 
 /**
+ * 多个概念的一个组合，持有Sequence，等待策略等一些引用，生产者引用
+ *
  * Coordinates claiming sequences for access to a data structure while tracking dependent {@link Sequence}s
  */
 public interface Sequencer extends Cursored, Sequenced

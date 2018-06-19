@@ -22,6 +22,9 @@ import com.lmax.disruptor.util.Util;
 
 class LhsPadding
 {
+    /**
+     * 防止伪共享
+     */
     protected long p1, p2, p3, p4, p5, p6, p7;
 }
 
@@ -36,12 +39,17 @@ class RhsPadding extends Value
 }
 
 /**
+ * 就是一个增长序列，类似oracle的增长序列，生产和消费程序都有Sequence，记录生产和消费程序的序列
+ *
  * <p>Concurrent sequence class used for tracking the progress of
  * the ring buffer and event processors.  Support a number
  * of concurrent operations including CAS and order writes.
+ * 并发序列类，用来记录ring buffer 和 事件处理器的序列。
+ * 通过CAS操作和Unsafe类的硬件级别的院子操作来保证并发一致性。
  *
  * <p>Also attempts to be more efficient with regards to false
  * sharing by adding padding around the volatile field.
+ * 通过在序列号前后添加缓存填充来避免伪共享。
  */
 public class Sequence extends RhsPadding
 {
@@ -54,6 +62,7 @@ public class Sequence extends RhsPadding
         UNSAFE = Util.getUnsafe();
         try
         {
+            //返回指定静态field的内存地址偏移量
             VALUE_OFFSET = UNSAFE.objectFieldOffset(Value.class.getDeclaredField("value"));
         }
         catch (final Exception e)
@@ -77,6 +86,7 @@ public class Sequence extends RhsPadding
      */
     public Sequence(final long initialValue)
     {
+        //设置obj对象中offset偏移地址对应的long型field的值为指定值
         UNSAFE.putOrderedLong(this, VALUE_OFFSET, initialValue);
     }
 

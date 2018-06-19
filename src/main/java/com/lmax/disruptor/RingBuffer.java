@@ -95,6 +95,8 @@ abstract class RingBufferFields<E> extends RingBufferPad
 }
 
 /**
+ * 是一个数组，根据追踪生产和消费的Sequence来实现一个环形的数据结构
+ *
  * Ring based store of reusable entries containing the data representing
  * an event being exchanged between event producer and {@link EventProcessor}s.
  *
@@ -193,6 +195,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
 
     /**
      * Create a new Ring Buffer with the specified producer type (SINGLE or MULTI)
+     * 创建ring buffer : SINGLE or MULTI
      *
      * @param <E> Class of the event stored in the ring buffer.
      * @param producerType producer type to use {@link ProducerType}.

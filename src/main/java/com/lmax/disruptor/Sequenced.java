@@ -4,6 +4,7 @@ public interface Sequenced
 {
     /**
      * The capacity of the data structure to hold entries.
+     * 数据结构的容量
      *
      * @return the size of the RingBuffer.
      */
