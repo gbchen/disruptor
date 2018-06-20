@@ -89,10 +89,10 @@ abstract class RingBufferFields<E> extends RingBufferPad {
  *
  * @param <E> implementation storing the data for sharing during exchange or parallel coordination of an event.
  */
-public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored, EventSequencer<E>, EventSink<E>
-{
+public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored, EventSequencer<E>, EventSink<E> {
+
     public static final long INITIAL_CURSOR_VALUE = Sequence.INITIAL_VALUE;
-    protected long p1, p2, p3, p4, p5, p6, p7;
+    protected long           p1, p2, p3, p4, p5, p6, p7;
 
     /**
      * Construct a RingBuffer with the full option set.
