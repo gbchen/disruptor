@@ -1,17 +1,10 @@
 /*
- * Copyright 2011 LMAX Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2011 LMAX Ltd. Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and limitations under the
+ * License.
  */
 package com.lmax.disruptor.dsl;
 
@@ -26,12 +19,17 @@ import java.util.*;
  */
 class ConsumerRepository<T> implements Iterable<ConsumerInfo> {
 
+    /**
+     * IdentityHashMap
+     *     区别与其他的键不能重复的容器，IdentityHashMap允许key值重复，
+     *     但是——key必须是两个不同的对象，即对于k1和k2，当k1==k2时，IdentityHashMap认为两个key相等，
+     *     而HashMap只有在k1.equals(k2) == true 时才会认为两个key相等。
+     */
     private final Map<EventHandler<?>, EventProcessorInfo<T>> eventProcessorInfoByEventHandler = new IdentityHashMap<>();
     private final Map<Sequence, ConsumerInfo>                 eventProcessorInfoBySequence     = new IdentityHashMap<>();
     private final Collection<ConsumerInfo>                    consumerInfos                    = new ArrayList<>();
 
-    public void add(final EventProcessor eventprocessor, final EventHandler<? super T> handler,
-                    final SequenceBarrier barrier) {
+    public void add(final EventProcessor eventprocessor, final EventHandler<? super T> handler, final SequenceBarrier barrier) {
         final EventProcessorInfo<T> consumerInfo = new EventProcessorInfo<>(eventprocessor, handler, barrier);
         eventProcessorInfoByEventHandler.put(handler, consumerInfo);
         eventProcessorInfoBySequence.put(eventprocessor.getSequence(), consumerInfo);

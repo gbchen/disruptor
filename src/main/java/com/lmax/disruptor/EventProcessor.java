@@ -16,6 +16,8 @@
 package com.lmax.disruptor;
 
 /**
+ * 事件处理器，实际上可以理解为消费者模型的框架，实现了线程Runnable的run方法，将循环判断等操作封在了里面。
+ *
  * An EventProcessor needs to be an implementation of a runnable that will poll for events from the {@link RingBuffer}
  * using the appropriate wait strategy.  It is unlikely that you will need to implement this interface yourself.
  * Look at using the {@link EventHandler} interface along with the pre-supplied BatchEventProcessor in the first
@@ -23,8 +25,7 @@ package com.lmax.disruptor;
  * <p>
  * An EventProcessor will generally be associated with a Thread for execution.
  */
-public interface EventProcessor extends Runnable
-{
+public interface EventProcessor extends Runnable {
     /**
      * Get a reference to the {@link Sequence} being used by this {@link EventProcessor}.
      *

@@ -39,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * 实际上就是整个基于ringBuffer实现的生产者消费者模式的容器。
+ *
  * <p>A DSL-style API for setting up the disruptor pattern around a ring buffer
  * (aka the Builder pattern).</p>
  *
@@ -121,15 +123,13 @@ public class Disruptor<T> {
      */
     public Disruptor(final EventFactory<T> eventFactory, final int ringBufferSize, final ThreadFactory threadFactory,
                      final ProducerType producerType, final WaitStrategy waitStrategy) {
-        this(RingBuffer.create(producerType, eventFactory, ringBufferSize, waitStrategy),
-             new BasicExecutor(threadFactory));
+        this(RingBuffer.create(producerType, eventFactory, ringBufferSize, waitStrategy), new BasicExecutor(threadFactory));
     }
 
     /**
      * Private constructor helper
      */
-    private Disruptor(final RingBuffer<T> ringBuffer, final Executor executor)
-    {
+    private Disruptor(final RingBuffer<T> ringBuffer, final Executor executor) {
         this.ringBuffer = ringBuffer;
         this.executor = executor;
     }
