@@ -17,6 +17,7 @@ package com.lmax.disruptor;
 
 /**
  * 多个概念的一个组合，持有Sequence，等待策略等一些引用，生产者引用
+ * 作为RingBuffer生产者的父接口，其直接实现有SingleProducerSequencer和MultiProducerSequencer。
  *
  * Coordinates claiming sequences for access to a data structure while tracking dependent {@link Sequence}s
  */

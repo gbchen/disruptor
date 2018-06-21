@@ -1,7 +1,6 @@
 package com.lmax.disruptor;
 
-public interface EventSink<E>
-{
+public interface EventSink<E> {
     /**
      * Publishes an event to the ring buffer.  It handles
      * claiming the next sequence, getting the current (uninitialised)

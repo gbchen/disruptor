@@ -16,6 +16,7 @@
 package com.lmax.disruptor;
 
 /**
+ * 事件转换器。实际上就是新事件向旧事件覆盖的接口定义。
  * <p>Implementations translate (write) data representations into events claimed from the {@link RingBuffer}.</p>
  *
  * <p>When publishing to the RingBuffer, provide an EventTranslator. The RingBuffer will select the next available

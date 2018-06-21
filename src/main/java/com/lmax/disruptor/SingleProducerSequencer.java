@@ -115,12 +115,13 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
             throw new IllegalArgumentException("n must be > 0");
         }
 
-        //nextValue记录生产者生产到的位置，
+        //该生产者发布的最大序列号
         long nextValue = this.nextValue;
 
-        //记录下一个要生产的序号
+        //记录下一个要生产的序号，欲发布的序列号
         long nextSequence = nextValue + n;
 
+        //覆盖点，即该生产者如果发布了这次的序列号，那它最终会落在哪个位置
         //得到下一个要生产的序号对应的位置
         //wrapPoint是一个很关键的变量，这个变量决定生产者是否可以覆盖序列号nextSequence，
         //wrapPoint为什么是nextSequence - bufferSize：
@@ -131,13 +132,21 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
         long wrapPoint = nextSequence - bufferSize;
 
         //cachedValue记录消费者线程中序列号最小的序列号，即是在最后面的消费者的序号
+        //TODO 所有消费者中消费得最慢那个的前一个序列号??
         long cachedGatingSequence = this.cachedValue;
 
+        //这里两个判断条件：
+        // 一是看生产者生产是不是超过了消费者，所以判断的是覆盖点是否超过了最慢消费者；
+        // 二是看消费者是否超过了当前生产者的最大序号，判断的是消费者是不是比生产者还快这种异常情况
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue) {
             cursor.setVolatile(nextValue); // StoreLoad fence
 
             long minSequence;
-            //判断wrapPoint是否大于消费者线程最小的序列号，如果大于，不能写入，继续等待
+
+            //判断覆盖点wrapPoint是否大于消费者线程最小的序列号，如果大于，不能写入，继续等待
+            //覆盖点是不是已经超过了最慢消费者和当前生产者序列号的最小者
+            //这两个有点难理解，实际上就是覆盖点不能超过最慢那个生产者，也不能超过当前自身，
+            //比如一次发布超过bufferSize），gatingSequences的处理也是类似算术处理，也可以看成是相对于原点是正还是负
             while (wrapPoint > (minSequence = Util.getMinimumSequence(gatingSequences, nextValue))) {
                 LockSupport.parkNanos(1L); // TODO: Use waitStrategy to spin?
             }
@@ -147,6 +156,7 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
         }
 
         //缓存生产者最大生产序列号
+        //把当前序列号更新为欲发布序列号
         this.nextValue = nextSequence;
 
         return nextSequence;

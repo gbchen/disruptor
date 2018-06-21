@@ -17,6 +17,7 @@ package com.lmax.disruptor;
 
 
 /**
+ * 消费者路障。规定了消费者如何向下走。都说disruptor无锁，事实上，该路障算是变向的锁。
  * 序列屏障，就是Sequence和RingBuffer交互的一个屏障，单个生产者时，生产者不需要SequenceBarrier
  *
  * Coordination barrier for tracking the cursor for publishers and sequence of

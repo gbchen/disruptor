@@ -75,8 +75,7 @@ abstract class RingBufferFields<E> extends RingBufferPad {
     }
 
     @SuppressWarnings("unchecked")
-    protected final E elementAt(long sequence)
-    {
+    protected final E elementAt(long sequence) {
         return (E) UNSAFE.getObject(entries, REF_ARRAY_BASE + ((sequence & indexMask) << REF_ELEMENT_SHIFT));
     }
 }
@@ -439,8 +438,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @see com.lmax.disruptor.EventSink#publishEvent(com.lmax.disruptor.EventTranslator)
      */
     @Override
-    public void publishEvent(EventTranslator<E> translator)
-    {
+    public void publishEvent(EventTranslator<E> translator) {
         final long sequence = sequencer.next();
         translateAndPublish(translator, sequence);
     }
@@ -449,16 +447,12 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @see com.lmax.disruptor.EventSink#tryPublishEvent(com.lmax.disruptor.EventTranslator)
      */
     @Override
-    public boolean tryPublishEvent(EventTranslator<E> translator)
-    {
-        try
-        {
+    public boolean tryPublishEvent(EventTranslator<E> translator) {
+        try {
             final long sequence = sequencer.tryNext();
             translateAndPublish(translator, sequence);
             return true;
-        }
-        catch (InsufficientCapacityException e)
-        {
+        } catch (InsufficientCapacityException e) {
             return false;
         }
     }
@@ -536,16 +530,12 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#tryPublishEvent(com.lmax.disruptor.EventTranslatorThreeArg, A, B, C)
      */
     @Override
-    public <A, B, C> boolean tryPublishEvent(EventTranslatorThreeArg<E, A, B, C> translator, A arg0, B arg1, C arg2)
-    {
-        try
-        {
+    public <A, B, C> boolean tryPublishEvent(EventTranslatorThreeArg<E, A, B, C> translator, A arg0, B arg1, C arg2) {
+        try {
             final long sequence = sequencer.tryNext();
             translateAndPublish(translator, sequence, arg0, arg1, arg2);
             return true;
-        }
-        catch (InsufficientCapacityException e)
-        {
+        } catch (InsufficientCapacityException e) {
             return false;
         }
     }
@@ -603,8 +593,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @see com.lmax.disruptor.EventSink#tryPublishEvents(com.lmax.disruptor.EventTranslator[])
      */
     @Override
-    public boolean tryPublishEvents(EventTranslator<E>[] translators)
-    {
+    public boolean tryPublishEvents(EventTranslator<E>[] translators) {
         return tryPublishEvents(translators, 0, translators.length);
     }
 
@@ -612,17 +601,13 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @see com.lmax.disruptor.EventSink#tryPublishEvents(com.lmax.disruptor.EventTranslator[], int, int)
      */
     @Override
-    public boolean tryPublishEvents(EventTranslator<E>[] translators, int batchStartsAt, int batchSize)
-    {
+    public boolean tryPublishEvents(EventTranslator<E>[] translators, int batchStartsAt, int batchSize) {
         checkBounds(translators, batchStartsAt, batchSize);
-        try
-        {
+        try {
             final long finalSequence = sequencer.tryNext(batchSize);
             translateAndPublishBatch(translators, batchStartsAt, batchSize, finalSequence);
             return true;
-        }
-        catch (InsufficientCapacityException e)
-        {
+        } catch (InsufficientCapacityException e) {
             return false;
         }
     }
@@ -641,8 +626,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#publishEvents(com.lmax.disruptor.EventTranslatorOneArg, int, int, A[])
      */
     @Override
-    public <A> void publishEvents(EventTranslatorOneArg<E, A> translator, int batchStartsAt, int batchSize, A[] arg0)
-    {
+    public <A> void publishEvents(EventTranslatorOneArg<E, A> translator, int batchStartsAt, int batchSize, A[] arg0) {
         checkBounds(arg0, batchStartsAt, batchSize);
         final long finalSequence = sequencer.next(batchSize);
         translateAndPublishBatch(translator, arg0, batchStartsAt, batchSize, finalSequence);
@@ -694,9 +678,8 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#publishEvents(com.lmax.disruptor.EventTranslatorTwoArg, int, int, A[], B[])
      */
     @Override
-    public <A, B> void publishEvents(
-        EventTranslatorTwoArg<E, A, B> translator, int batchStartsAt, int batchSize, A[] arg0, B[] arg1)
-    {
+    public <A, B> void publishEvents(EventTranslatorTwoArg<E, A, B> translator, int batchStartsAt, int batchSize, A[] arg0,
+                                     B[] arg1) {
         checkBounds(arg0, arg1, batchStartsAt, batchSize);
         final long finalSequence = sequencer.next(batchSize);
         translateAndPublishBatch(translator, arg0, arg1, batchStartsAt, batchSize, finalSequence);
@@ -717,18 +700,14 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#tryPublishEvents(com.lmax.disruptor.EventTranslatorTwoArg, int, int, A[], B[])
      */
     @Override
-    public <A, B> boolean tryPublishEvents(
-        EventTranslatorTwoArg<E, A, B> translator, int batchStartsAt, int batchSize, A[] arg0, B[] arg1)
-    {
+    public <A, B> boolean tryPublishEvents(EventTranslatorTwoArg<E, A, B> translator, int batchStartsAt, int batchSize, A[] arg0,
+                                           B[] arg1) {
         checkBounds(arg0, arg1, batchStartsAt, batchSize);
-        try
-        {
+        try {
             final long finalSequence = sequencer.tryNext(batchSize);
             translateAndPublishBatch(translator, arg0, arg1, batchStartsAt, batchSize, finalSequence);
             return true;
-        }
-        catch (InsufficientCapacityException e)
-        {
+        } catch (InsufficientCapacityException e) {
             return false;
         }
     }
@@ -738,8 +717,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#publishEvents(com.lmax.disruptor.EventTranslatorThreeArg, A[], B[], C[])
      */
     @Override
-    public <A, B, C> void publishEvents(EventTranslatorThreeArg<E, A, B, C> translator, A[] arg0, B[] arg1, C[] arg2)
-    {
+    public <A, B, C> void publishEvents(EventTranslatorThreeArg<E, A, B, C> translator, A[] arg0, B[] arg1, C[] arg2) {
         publishEvents(translator, 0, arg0.length, arg0, arg1, arg2);
     }
 
@@ -748,9 +726,8 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#publishEvents(com.lmax.disruptor.EventTranslatorThreeArg, int, int, A[], B[], C[])
      */
     @Override
-    public <A, B, C> void publishEvents(
-        EventTranslatorThreeArg<E, A, B, C> translator, int batchStartsAt, int batchSize, A[] arg0, B[] arg1, C[] arg2)
-    {
+    public <A, B, C> void publishEvents(EventTranslatorThreeArg<E, A, B, C> translator, int batchStartsAt, int batchSize,
+                                        A[] arg0, B[] arg1, C[] arg2) {
         checkBounds(arg0, arg1, arg2, batchStartsAt, batchSize);
         final long finalSequence = sequencer.next(batchSize);
         translateAndPublishBatch(translator, arg0, arg1, arg2, batchStartsAt, batchSize, finalSequence);
@@ -761,9 +738,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#tryPublishEvents(com.lmax.disruptor.EventTranslatorThreeArg, A[], B[], C[])
      */
     @Override
-    public <A, B, C> boolean tryPublishEvents(
-        EventTranslatorThreeArg<E, A, B, C> translator, A[] arg0, B[] arg1, C[] arg2)
-    {
+    public <A, B, C> boolean tryPublishEvents(EventTranslatorThreeArg<E, A, B, C> translator, A[] arg0, B[] arg1, C[] arg2) {
         return tryPublishEvents(translator, 0, arg0.length, arg0, arg1, arg2);
     }
 
@@ -772,18 +747,14 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * com.lmax.disruptor.EventSink#tryPublishEvents(com.lmax.disruptor.EventTranslatorThreeArg, int, int, A[], B[], C[])
      */
     @Override
-    public <A, B, C> boolean tryPublishEvents(
-        EventTranslatorThreeArg<E, A, B, C> translator, int batchStartsAt, int batchSize, A[] arg0, B[] arg1, C[] arg2)
-    {
+    public <A, B, C> boolean tryPublishEvents(EventTranslatorThreeArg<E, A, B, C> translator, int batchStartsAt, int batchSize,
+                                              A[] arg0, B[] arg1, C[] arg2) {
         checkBounds(arg0, arg1, arg2, batchStartsAt, batchSize);
-        try
-        {
+        try {
             final long finalSequence = sequencer.tryNext(batchSize);
             translateAndPublishBatch(translator, arg0, arg1, arg2, batchStartsAt, batchSize, finalSequence);
             return true;
-        }
-        catch (InsufficientCapacityException e)
-        {
+        } catch (InsufficientCapacityException e) {
             return false;
         }
     }
@@ -801,8 +772,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @see com.lmax.disruptor.EventSink#publishEvents(com.lmax.disruptor.EventTranslatorVararg, int, int, java.lang.Object[][])
      */
     @Override
-    public void publishEvents(EventTranslatorVararg<E> translator, int batchStartsAt, int batchSize, Object[]... args)
-    {
+    public void publishEvents(EventTranslatorVararg<E> translator, int batchStartsAt, int batchSize, Object[]... args) {
         checkBounds(batchStartsAt, batchSize, args);
         final long finalSequence = sequencer.next(batchSize);
         translateAndPublishBatch(translator, batchStartsAt, batchSize, finalSequence, args);
@@ -821,18 +791,13 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @see com.lmax.disruptor.EventSink#tryPublishEvents(com.lmax.disruptor.EventTranslatorVararg, int, int, java.lang.Object[][])
      */
     @Override
-    public boolean tryPublishEvents(
-        EventTranslatorVararg<E> translator, int batchStartsAt, int batchSize, Object[]... args)
-    {
+    public boolean tryPublishEvents(EventTranslatorVararg<E> translator, int batchStartsAt, int batchSize, Object[]... args) {
         checkBounds(args, batchStartsAt, batchSize);
-        try
-        {
+        try {
             final long finalSequence = sequencer.tryNext(batchSize);
             translateAndPublishBatch(translator, batchStartsAt, batchSize, finalSequence, args);
             return true;
-        }
-        catch (InsufficientCapacityException e)
-        {
+        } catch (InsufficientCapacityException e) {
             return false;
         }
     }
@@ -868,153 +833,115 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      *
      * @return The number of slots remaining.
      */
-    public long remainingCapacity()
-    {
+    public long remainingCapacity() {
         return sequencer.remainingCapacity();
     }
 
-    private void checkBounds(final EventTranslator<E>[] translators, final int batchStartsAt, final int batchSize)
-    {
+    private void checkBounds(final EventTranslator<E>[] translators, final int batchStartsAt, final int batchSize) {
         checkBatchSizing(batchStartsAt, batchSize);
         batchOverRuns(translators, batchStartsAt, batchSize);
     }
 
-    private void checkBatchSizing(int batchStartsAt, int batchSize)
-    {
-        if (batchStartsAt < 0 || batchSize < 0)
-        {
-            throw new IllegalArgumentException("Both batchStartsAt and batchSize must be positive but got: batchStartsAt " + batchStartsAt + " and batchSize " + batchSize);
-        }
-        else if (batchSize > bufferSize)
-        {
-            throw new IllegalArgumentException("The ring buffer cannot accommodate " + batchSize + " it only has space for " + bufferSize + " entities.");
+    private void checkBatchSizing(int batchStartsAt, int batchSize) {
+        if (batchStartsAt < 0 || batchSize < 0) {
+            throw new IllegalArgumentException("Both batchStartsAt and batchSize must be positive but got: batchStartsAt "
+                                               + batchStartsAt + " and batchSize " + batchSize);
+        } else if (batchSize > bufferSize) {
+            throw new IllegalArgumentException("The ring buffer cannot accommodate " + batchSize + " it only has space for "
+                                               + bufferSize + " entities.");
         }
     }
 
-    private <A> void checkBounds(final A[] arg0, final int batchStartsAt, final int batchSize)
-    {
+    private <A> void checkBounds(final A[] arg0, final int batchStartsAt, final int batchSize) {
         checkBatchSizing(batchStartsAt, batchSize);
         batchOverRuns(arg0, batchStartsAt, batchSize);
     }
 
-    private <A, B> void checkBounds(final A[] arg0, final B[] arg1, final int batchStartsAt, final int batchSize)
-    {
+    private <A, B> void checkBounds(final A[] arg0, final B[] arg1, final int batchStartsAt, final int batchSize) {
         checkBatchSizing(batchStartsAt, batchSize);
         batchOverRuns(arg0, batchStartsAt, batchSize);
         batchOverRuns(arg1, batchStartsAt, batchSize);
     }
 
-    private <A, B, C> void checkBounds(
-        final A[] arg0, final B[] arg1, final C[] arg2, final int batchStartsAt, final int batchSize)
-    {
+    private <A, B, C> void checkBounds(final A[] arg0, final B[] arg1, final C[] arg2, final int batchStartsAt,
+                                       final int batchSize) {
         checkBatchSizing(batchStartsAt, batchSize);
         batchOverRuns(arg0, batchStartsAt, batchSize);
         batchOverRuns(arg1, batchStartsAt, batchSize);
         batchOverRuns(arg2, batchStartsAt, batchSize);
     }
 
-    private void checkBounds(final int batchStartsAt, final int batchSize, final Object[][] args)
-    {
+    private void checkBounds(final int batchStartsAt, final int batchSize, final Object[][] args) {
         checkBatchSizing(batchStartsAt, batchSize);
         batchOverRuns(args, batchStartsAt, batchSize);
     }
 
-    private <A> void batchOverRuns(final A[] arg0, final int batchStartsAt, final int batchSize)
-    {
-        if (batchStartsAt + batchSize > arg0.length)
-        {
-            throw new IllegalArgumentException(
-                "A batchSize of: " + batchSize +
-                    " with batchStatsAt of: " + batchStartsAt +
-                    " will overrun the available number of arguments: " + (arg0.length - batchStartsAt));
+    private <A> void batchOverRuns(final A[] arg0, final int batchStartsAt, final int batchSize) {
+        if (batchStartsAt + batchSize > arg0.length) {
+            throw new IllegalArgumentException("A batchSize of: " + batchSize + " with batchStatsAt of: " + batchStartsAt
+                                               + " will overrun the available number of arguments: "
+                                               + (arg0.length - batchStartsAt));
         }
     }
 
-    private void translateAndPublish(EventTranslator<E> translator, long sequence)
-    {
-        try
-        {
+    private void translateAndPublish(EventTranslator<E> translator, long sequence) {
+        try {
             translator.translateTo(get(sequence), sequence);
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(sequence);
         }
     }
 
-    private <A> void translateAndPublish(EventTranslatorOneArg<E, A> translator, long sequence, A arg0)
-    {
-        try
-        {
+    private <A> void translateAndPublish(EventTranslatorOneArg<E, A> translator, long sequence, A arg0) {
+        try {
             translator.translateTo(get(sequence), sequence, arg0);
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(sequence);
         }
     }
 
-    private <A, B> void translateAndPublish(EventTranslatorTwoArg<E, A, B> translator, long sequence, A arg0, B arg1)
-    {
-        try
-        {
+    private <A, B> void translateAndPublish(EventTranslatorTwoArg<E, A, B> translator, long sequence, A arg0, B arg1) {
+        try {
             translator.translateTo(get(sequence), sequence, arg0, arg1);
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(sequence);
         }
     }
 
-    private <A, B, C> void translateAndPublish(
-        EventTranslatorThreeArg<E, A, B, C> translator, long sequence,
-        A arg0, B arg1, C arg2)
-    {
-        try
-        {
+    private <A, B, C> void translateAndPublish(EventTranslatorThreeArg<E, A, B, C> translator, long sequence, A arg0, B arg1,
+                                               C arg2) {
+        try {
             translator.translateTo(get(sequence), sequence, arg0, arg1, arg2);
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(sequence);
         }
     }
 
-    private void translateAndPublish(EventTranslatorVararg<E> translator, long sequence, Object... args)
-    {
-        try
-        {
+    private void translateAndPublish(EventTranslatorVararg<E> translator, long sequence, Object... args) {
+        try {
             translator.translateTo(get(sequence), sequence, args);
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(sequence);
         }
     }
 
-    private void translateAndPublishBatch(
-        final EventTranslator<E>[] translators, int batchStartsAt,
-        final int batchSize, final long finalSequence)
-    {
+    private void translateAndPublishBatch(final EventTranslator<E>[] translators, int batchStartsAt, final int batchSize,
+                                          final long finalSequence) {
         final long initialSequence = finalSequence - (batchSize - 1);
-        try
-        {
+        try {
             long sequence = initialSequence;
             final int batchEndsAt = batchStartsAt + batchSize;
-            for (int i = batchStartsAt; i < batchEndsAt; i++)
-            {
+            for (int i = batchStartsAt; i < batchEndsAt; i++) {
                 final EventTranslator<E> translator = translators[i];
                 translator.translateTo(get(sequence), sequence++);
             }
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(initialSequence, finalSequence);
         }
     }
 
-    private <A> void translateAndPublishBatch(final EventTranslatorOneArg<E, A> translator, final A[] arg0,
-                                              int batchStartsAt, final int batchSize, final long finalSequence) {
+    private <A> void translateAndPublishBatch(final EventTranslatorOneArg<E, A> translator, final A[] arg0, int batchStartsAt,
+                                              final int batchSize, final long finalSequence) {
         final long initialSequence = finalSequence - (batchSize - 1);
         try {
             long sequence = initialSequence;
@@ -1027,74 +954,51 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
         }
     }
 
-    private <A, B> void translateAndPublishBatch(
-        final EventTranslatorTwoArg<E, A, B> translator, final A[] arg0,
-        final B[] arg1, int batchStartsAt, int batchSize,
-        final long finalSequence)
-    {
+    private <A, B> void translateAndPublishBatch(final EventTranslatorTwoArg<E, A, B> translator, final A[] arg0, final B[] arg1,
+                                                 int batchStartsAt, int batchSize, final long finalSequence) {
         final long initialSequence = finalSequence - (batchSize - 1);
-        try
-        {
+        try {
             long sequence = initialSequence;
             final int batchEndsAt = batchStartsAt + batchSize;
-            for (int i = batchStartsAt; i < batchEndsAt; i++)
-            {
+            for (int i = batchStartsAt; i < batchEndsAt; i++) {
                 translator.translateTo(get(sequence), sequence++, arg0[i], arg1[i]);
             }
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(initialSequence, finalSequence);
         }
     }
 
-    private <A, B, C> void translateAndPublishBatch(
-        final EventTranslatorThreeArg<E, A, B, C> translator,
-        final A[] arg0, final B[] arg1, final C[] arg2, int batchStartsAt,
-        final int batchSize, final long finalSequence)
-    {
+    private <A, B, C> void translateAndPublishBatch(final EventTranslatorThreeArg<E, A, B, C> translator, final A[] arg0,
+                                                    final B[] arg1, final C[] arg2, int batchStartsAt, final int batchSize,
+                                                    final long finalSequence) {
         final long initialSequence = finalSequence - (batchSize - 1);
-        try
-        {
+        try {
             long sequence = initialSequence;
             final int batchEndsAt = batchStartsAt + batchSize;
-            for (int i = batchStartsAt; i < batchEndsAt; i++)
-            {
+            for (int i = batchStartsAt; i < batchEndsAt; i++) {
                 translator.translateTo(get(sequence), sequence++, arg0[i], arg1[i], arg2[i]);
             }
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(initialSequence, finalSequence);
         }
     }
 
-    private void translateAndPublishBatch(
-        final EventTranslatorVararg<E> translator, int batchStartsAt,
-        final int batchSize, final long finalSequence, final Object[][] args)
-    {
+    private void translateAndPublishBatch(final EventTranslatorVararg<E> translator, int batchStartsAt, final int batchSize,
+                                          final long finalSequence, final Object[][] args) {
         final long initialSequence = finalSequence - (batchSize - 1);
-        try
-        {
+        try {
             long sequence = initialSequence;
             final int batchEndsAt = batchStartsAt + batchSize;
-            for (int i = batchStartsAt; i < batchEndsAt; i++)
-            {
+            for (int i = batchStartsAt; i < batchEndsAt; i++) {
                 translator.translateTo(get(sequence), sequence++, args[i]);
             }
-        }
-        finally
-        {
+        } finally {
             sequencer.publish(initialSequence, finalSequence);
         }
     }
 
     @Override
-    public String toString()
-    {
-        return "RingBuffer{" +
-            "bufferSize=" + bufferSize +
-            ", sequencer=" + sequencer +
-            "}";
+    public String toString() {
+        return "RingBuffer{" + "bufferSize=" + bufferSize + ", sequencer=" + sequencer + "}";
     }
 }

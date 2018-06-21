@@ -22,6 +22,7 @@ package com.lmax.disruptor;
 public interface WaitStrategy
 {
     /**
+     * 当生产者生产得太快而消费者消费得太慢时的等待策略。
      * Wait for the given sequence to be available.  It is possible for this method to return a value
      * less than the sequence number supplied depending on the implementation of the WaitStrategy.  A common
      * use for this is to signal a timeout.  Any EventProcessor that is using a WaitStrategy to get notifications

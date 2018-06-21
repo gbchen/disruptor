@@ -205,8 +205,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
      * @see Sequencer#publish(long)
      */
     @Override
-    public void publish(final long sequence)
-    {
+    public void publish(final long sequence) {
         setAvailable(sequence);
         waitStrategy.signalAllWhenBlocking();
     }
@@ -215,10 +214,8 @@ public final class MultiProducerSequencer extends AbstractSequencer {
      * @see Sequencer#publish(long, long)
      */
     @Override
-    public void publish(long lo, long hi)
-    {
-        for (long l = lo; l <= hi; l++)
-        {
+    public void publish(long lo, long hi) {
+        for (long l = lo; l <= hi; l++) {
             setAvailable(l);
         }
         waitStrategy.signalAllWhenBlocking();
