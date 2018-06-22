@@ -15,7 +15,6 @@
  */
 package com.lmax.disruptor;
 
-
 import sun.misc.Unsafe;
 
 import com.lmax.disruptor.dsl.ProducerType;
