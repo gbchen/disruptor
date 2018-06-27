@@ -63,6 +63,10 @@ public class Disruptor<T> {
     private final RingBuffer<T>         ringBuffer;
     private final Executor              executor;
     private final ConsumerRepository<T> consumerRepository = new ConsumerRepository<>();
+
+    /**
+     * Disruptor 运行状态
+     */
     private final AtomicBoolean         started            = new AtomicBoolean(false);
     private ExceptionHandler<? super T> exceptionHandler   = new ExceptionHandlerWrapper<>();
 
@@ -152,6 +156,14 @@ public class Disruptor<T> {
     public final EventHandlerGroup<T> handleEventsWith(final EventHandler<? super T>... handlers) {
         return createEventProcessors(new Sequence[0], handlers);
     }
+    /**   new Sequence[0]
+     * int[] zero = new int[0];
+     * int[] nil = null;
+     *  zero是一个长度为0的数组，我们称之为“空数组”，空数组也是一个对象，只是包含元素个数为0。
+     *  nil是一个数组类型的空引用。
+     *  假设一个方法返回一个数组，如果它返回null，则调用方法必须先判断是否返回null，才能对放回数组进一步处理，而如果返回空数组，则无须null引用检查。
+     *  鉴于此，返回数组的方法在没有结果时我们通常返回空数组，而不是null，这样做对于函数调用者的处理比较方便。
+     */
 
     /**
      * <p>Set up custom event processors to handle events from the ring buffer. The Disruptor will
@@ -494,8 +506,7 @@ public class Disruptor<T> {
         return false;
     }
 
-    EventHandlerGroup<T> createEventProcessors(final Sequence[] barrierSequences,
-                                               final EventHandler<? super T>[] eventHandlers) {
+    EventHandlerGroup<T> createEventProcessors(final Sequence[] barrierSequences, final EventHandler<? super T>[] eventHandlers) {
         checkNotStarted();
 
         final Sequence[] processorSequences = new Sequence[eventHandlers.length];
@@ -504,8 +515,7 @@ public class Disruptor<T> {
         for (int i = 0, eventHandlersLength = eventHandlers.length; i < eventHandlersLength; i++) {
             final EventHandler<? super T> eventHandler = eventHandlers[i];
 
-            final BatchEventProcessor<T> batchEventProcessor = new BatchEventProcessor<>(ringBuffer, barrier,
-                                                                                         eventHandler);
+            final BatchEventProcessor<T> batchEventProcessor = new BatchEventProcessor<>(ringBuffer, barrier, eventHandler);
 
             if (exceptionHandler != null) {
                 batchEventProcessor.setExceptionHandler(exceptionHandler);
@@ -520,8 +530,7 @@ public class Disruptor<T> {
         return new EventHandlerGroup<>(this, consumerRepository, processorSequences);
     }
 
-    private void updateGatingSequencesForNextInChain(final Sequence[] barrierSequences,
-                                                     final Sequence[] processorSequences) {
+    private void updateGatingSequencesForNextInChain(final Sequence[] barrierSequences, final Sequence[] processorSequences) {
         if (processorSequences.length > 0) {
             ringBuffer.addGatingSequences(processorSequences);
             for (final Sequence barrierSequence : barrierSequences) {
@@ -541,8 +550,7 @@ public class Disruptor<T> {
         return handleEventsWith(eventProcessors);
     }
 
-    EventHandlerGroup<T> createWorkerPool(final Sequence[] barrierSequences,
-                                          final WorkHandler<? super T>[] workHandlers) {
+    EventHandlerGroup<T> createWorkerPool(final Sequence[] barrierSequences, final WorkHandler<? super T>[] workHandlers) {
         final SequenceBarrier sequenceBarrier = ringBuffer.newBarrier(barrierSequences);
         final WorkerPool<T> workerPool = new WorkerPool<>(ringBuffer, sequenceBarrier, exceptionHandler, workHandlers);
 
@@ -561,6 +569,9 @@ public class Disruptor<T> {
         }
     }
 
+    /**
+     * 设置启动状态位started为true，并检查Disruptor只启动了一次，防止重复启动Disruptor
+     */
     private void checkOnlyStartedOnce() {
         if (!started.compareAndSet(false, true)) {
             throw new IllegalStateException("Disruptor.start() must only be called once.");

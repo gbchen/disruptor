@@ -380,8 +380,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @return A sequence barrier that will track the specified sequences.
      * @see SequenceBarrier
      */
-    public SequenceBarrier newBarrier(Sequence... sequencesToTrack)
-    {
+    public SequenceBarrier newBarrier(Sequence... sequencesToTrack) {
         return sequencer.newBarrier(sequencesToTrack);
     }
 

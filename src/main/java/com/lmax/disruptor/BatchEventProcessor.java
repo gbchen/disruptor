@@ -29,18 +29,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class BatchEventProcessor<T> implements EventProcessor {
 
-    private static final int IDLE = 0;
-    private static final int HALTED = IDLE + 1;
-    private static final int RUNNING = HALTED + 1;
+    private static final int              IDLE             = 0;
+    private static final int              HALTED           = IDLE + 1;
+    private static final int              RUNNING          = HALTED + 1;
 
-    private final AtomicInteger running = new AtomicInteger(IDLE);
-    private ExceptionHandler<? super T> exceptionHandler = new FatalExceptionHandler();
-    private final DataProvider<T> dataProvider;
-    private final SequenceBarrier sequenceBarrier;
+    private final AtomicInteger           running          = new AtomicInteger(IDLE);
+    private ExceptionHandler<? super T>   exceptionHandler = new FatalExceptionHandler();
+    private final DataProvider<T>         dataProvider;
+    private final SequenceBarrier         sequenceBarrier;
     private final EventHandler<? super T> eventHandler;
-    private final Sequence sequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    private final TimeoutHandler timeoutHandler;
-    private final BatchStartAware batchStartAware;
+    private final Sequence                sequence         = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    private final TimeoutHandler          timeoutHandler;
+    private final BatchStartAware         batchStartAware;
 
     /**
      * Construct a {@link EventProcessor} that will automatically track the progress by updating its sequence when
@@ -52,20 +52,17 @@ public final class BatchEventProcessor<T> implements EventProcessor {
      */
     public BatchEventProcessor(final DataProvider<T> dataProvider, final SequenceBarrier sequenceBarrier,
                                final EventHandler<? super T> eventHandler) {
-        
+
         this.dataProvider = dataProvider;
         this.sequenceBarrier = sequenceBarrier;
         this.eventHandler = eventHandler;
 
-        if (eventHandler instanceof SequenceReportingEventHandler)
-        {
+        if (eventHandler instanceof SequenceReportingEventHandler) {
             ((SequenceReportingEventHandler<?>) eventHandler).setSequenceCallback(sequence);
         }
 
-        batchStartAware =
-            (eventHandler instanceof BatchStartAware) ? (BatchStartAware) eventHandler : null;
-        timeoutHandler =
-            (eventHandler instanceof TimeoutHandler) ? (TimeoutHandler) eventHandler : null;
+        batchStartAware = (eventHandler instanceof BatchStartAware) ? (BatchStartAware) eventHandler : null;
+        timeoutHandler = (eventHandler instanceof TimeoutHandler) ? (TimeoutHandler) eventHandler : null;
     }
 
     @Override
