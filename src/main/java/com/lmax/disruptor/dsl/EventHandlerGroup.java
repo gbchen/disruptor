@@ -20,6 +20,7 @@ import com.lmax.disruptor.EventProcessor;
 import com.lmax.disruptor.Sequence;
 import com.lmax.disruptor.SequenceBarrier;
 import com.lmax.disruptor.WorkHandler;
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
 
 import java.util.Arrays;
 
@@ -177,7 +178,7 @@ public class EventHandlerGroup<T> {
     /**
      * Create a dependency barrier for the processors in this group.
      * This allows custom event processors to have dependencies on
-     * {@link com.lmax.disruptor.BatchEventProcessor}s created by the disruptor.
+     * {@link BatchEventProcessor}s created by the disruptor.
      *
      * @return a {@link SequenceBarrier} including all the processors in this group.
      */

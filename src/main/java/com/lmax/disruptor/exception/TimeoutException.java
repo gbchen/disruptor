@@ -1,4 +1,4 @@
-package com.lmax.disruptor;
+package com.lmax.disruptor.exception;
 
 @SuppressWarnings("serial")
 public final class TimeoutException extends Exception

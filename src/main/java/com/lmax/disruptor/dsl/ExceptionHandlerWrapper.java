@@ -1,7 +1,7 @@
 package com.lmax.disruptor.dsl;
 
 import com.lmax.disruptor.ExceptionHandler;
-import com.lmax.disruptor.FatalExceptionHandler;
+import com.lmax.disruptor.exception.handler.FatalExceptionHandler;
 
 public class ExceptionHandlerWrapper<T> implements ExceptionHandler<T> {
 

@@ -2,7 +2,7 @@ package com.lmax.disruptor.example;
 
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.LifecycleAware;
-import com.lmax.disruptor.TimeoutException;
+import com.lmax.disruptor.exception.TimeoutException;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.support.LongEvent;
 import com.lmax.disruptor.util.DaemonThreadFactory;

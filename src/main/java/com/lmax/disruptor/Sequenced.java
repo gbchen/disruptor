@@ -1,5 +1,7 @@
 package com.lmax.disruptor;
 
+import com.lmax.disruptor.exception.InsufficientCapacityException;
+
 public interface Sequenced {
     /**
      * The capacity of the data structure to hold entries.

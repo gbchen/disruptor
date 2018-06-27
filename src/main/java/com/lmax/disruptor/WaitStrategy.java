@@ -16,11 +16,17 @@
 package com.lmax.disruptor;
 
 
+import com.lmax.disruptor.EventProcessor;
+import com.lmax.disruptor.Sequence;
+import com.lmax.disruptor.SequenceBarrier;
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
+import com.lmax.disruptor.exception.AlertException;
+import com.lmax.disruptor.exception.TimeoutException;
+
 /**
  * Strategy employed for making {@link EventProcessor}s wait on a cursor {@link Sequence}.
  */
-public interface WaitStrategy
-{
+public interface WaitStrategy {
     /**
      * 当生产者生产得太快而消费者消费得太慢时的等待策略。
      * Wait for the given sequence to be available.  It is possible for this method to return a value

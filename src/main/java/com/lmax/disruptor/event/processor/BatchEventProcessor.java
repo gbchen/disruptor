@@ -13,7 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor;
+package com.lmax.disruptor.event.processor;
+
+import com.lmax.disruptor.BatchStartAware;
+import com.lmax.disruptor.DataProvider;
+import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.EventProcessor;
+import com.lmax.disruptor.ExceptionHandler;
+import com.lmax.disruptor.LifecycleAware;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.Sequence;
+import com.lmax.disruptor.SequenceBarrier;
+import com.lmax.disruptor.SequenceReportingEventHandler;
+import com.lmax.disruptor.Sequencer;
+import com.lmax.disruptor.TimeoutHandler;
+import com.lmax.disruptor.exception.AlertException;
+import com.lmax.disruptor.exception.TimeoutException;
+import com.lmax.disruptor.exception.handler.FatalExceptionHandler;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -34,13 +50,13 @@ public final class BatchEventProcessor<T> implements EventProcessor {
     private static final int              RUNNING          = HALTED + 1;
 
     private final AtomicInteger           running          = new AtomicInteger(IDLE);
-    private ExceptionHandler<? super T>   exceptionHandler = new FatalExceptionHandler();
-    private final DataProvider<T>         dataProvider;
-    private final SequenceBarrier         sequenceBarrier;
+    private ExceptionHandler<? super T> exceptionHandler = new FatalExceptionHandler();
+    private final DataProvider<T> dataProvider;
+    private final SequenceBarrier sequenceBarrier;
     private final EventHandler<? super T> eventHandler;
-    private final Sequence                sequence         = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    private final TimeoutHandler          timeoutHandler;
-    private final BatchStartAware         batchStartAware;
+    private final Sequence sequence         = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    private final TimeoutHandler timeoutHandler;
+    private final BatchStartAware batchStartAware;
 
     /**
      * Construct a {@link EventProcessor} that will automatically track the progress by updating its sequence when

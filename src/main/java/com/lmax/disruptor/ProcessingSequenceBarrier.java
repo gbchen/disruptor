@@ -16,6 +16,9 @@
 package com.lmax.disruptor;
 
 
+import com.lmax.disruptor.exception.AlertException;
+import com.lmax.disruptor.exception.TimeoutException;
+
 /**
  * {@link SequenceBarrier} handed out for gating {@link EventProcessor}s on a cursor sequence and optional dependent {@link EventProcessor}(s),
  * using the given WaitStrategy.

@@ -20,9 +20,8 @@ package com.lmax.disruptor;
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
  */
-public final class AggregateEventHandler<T>
-    implements EventHandler<T>, LifecycleAware
-{
+public final class AggregateEventHandler<T> implements EventHandler<T>, LifecycleAware {
+
     private final EventHandler<T>[] eventHandlers;
 
     /**

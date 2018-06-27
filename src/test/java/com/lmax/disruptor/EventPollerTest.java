@@ -1,6 +1,8 @@
 package com.lmax.disruptor;
 
 import com.lmax.disruptor.EventPoller.PollState;
+import com.lmax.disruptor.waitstrategy.BusySpinWaitStrategy;
+import com.lmax.disruptor.waitstrategy.SleepingWaitStrategy;
 import org.junit.Test;
 
 import java.util.ArrayList;

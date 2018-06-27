@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor;
+package com.lmax.disruptor.event.translator;
+
+import com.lmax.disruptor.EventTranslator;
+import com.lmax.disruptor.RingBuffer;
 
 /**
  * Implementations translate another data representations into events claimed from the {@link RingBuffer}

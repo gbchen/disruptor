@@ -1,5 +1,6 @@
 package com.lmax.disruptor;
 
+import com.lmax.disruptor.exception.InsufficientCapacityException;
 import com.lmax.disruptor.support.StubEvent;
 import org.junit.Before;
 import org.junit.Test;

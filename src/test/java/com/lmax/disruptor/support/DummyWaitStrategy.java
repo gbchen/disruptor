@@ -1,6 +1,9 @@
 package com.lmax.disruptor.support;
 
 import com.lmax.disruptor.*;
+import com.lmax.disruptor.exception.AlertException;
+import com.lmax.disruptor.exception.TimeoutException;
+import com.lmax.disruptor.WaitStrategy;
 
 public class DummyWaitStrategy implements WaitStrategy
 {

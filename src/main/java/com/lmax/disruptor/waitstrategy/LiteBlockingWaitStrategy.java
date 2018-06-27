@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor;
+package com.lmax.disruptor.waitstrategy;
 
+import com.lmax.disruptor.Sequence;
+import com.lmax.disruptor.SequenceBarrier;
+import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.exception.AlertException;
 import com.lmax.disruptor.util.ThreadHints;
 
 import java.util.concurrent.atomic.AtomicBoolean;

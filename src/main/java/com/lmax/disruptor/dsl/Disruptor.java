@@ -15,23 +15,24 @@
  */
 package com.lmax.disruptor.dsl;
 
-import com.lmax.disruptor.BatchEventProcessor;
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventProcessor;
 import com.lmax.disruptor.EventTranslator;
-import com.lmax.disruptor.EventTranslatorOneArg;
-import com.lmax.disruptor.EventTranslatorThreeArg;
-import com.lmax.disruptor.EventTranslatorTwoArg;
+import com.lmax.disruptor.event.translator.EventTranslatorOneArg;
+import com.lmax.disruptor.event.translator.EventTranslatorThreeArg;
+import com.lmax.disruptor.event.translator.EventTranslatorTwoArg;
 import com.lmax.disruptor.ExceptionHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.Sequence;
 import com.lmax.disruptor.SequenceBarrier;
-import com.lmax.disruptor.TimeoutException;
+import com.lmax.disruptor.exception.TimeoutException;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.WorkHandler;
 import com.lmax.disruptor.WorkerPool;
 import com.lmax.disruptor.util.Util;
+import com.lmax.disruptor.waitstrategy.BlockingWaitStrategy;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
@@ -71,7 +72,7 @@ public class Disruptor<T> {
     private ExceptionHandler<? super T> exceptionHandler   = new ExceptionHandlerWrapper<>();
 
     /**
-     * Create a new Disruptor. Will default to {@link com.lmax.disruptor.BlockingWaitStrategy} and
+     * Create a new Disruptor. Will default to {@link BlockingWaitStrategy} and
      * {@link ProducerType}.MULTI
      *
      * @deprecated Use a {@link ThreadFactory} instead of an {@link Executor} as a the ThreadFactory
@@ -105,7 +106,7 @@ public class Disruptor<T> {
     }
 
     /**
-     * Create a new Disruptor. Will default to {@link com.lmax.disruptor.BlockingWaitStrategy} and
+     * Create a new Disruptor. Will default to {@link BlockingWaitStrategy} and
      * {@link ProducerType}.MULTI
      *
      * @param eventFactory   the factory to create events in the ring buffer.

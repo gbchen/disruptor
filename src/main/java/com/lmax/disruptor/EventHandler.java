@@ -15,6 +15,8 @@
  */
 package com.lmax.disruptor;
 
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
+
 /**
  * 事件处置器，与前面处理器的不同是，事件处置器不负责框架内的行为，仅仅是EventProcessor作为消费者框架对外预留的扩展点罢了
  * Callback interface to be implemented for processing events as they become available in the {@link RingBuffer}

@@ -15,6 +15,7 @@
  */
 package com.lmax.disruptor;
 
+import com.lmax.disruptor.exception.handler.FatalExceptionHandler;
 import com.lmax.disruptor.support.TestEvent;
 import org.junit.Assert;
 import org.junit.Test;

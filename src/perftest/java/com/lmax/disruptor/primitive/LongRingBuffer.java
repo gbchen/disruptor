@@ -1,6 +1,6 @@
 package com.lmax.disruptor.primitive;
 
-import com.lmax.disruptor.BatchEventProcessor;
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
 import com.lmax.disruptor.DataProvider;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.Sequencer;

@@ -15,18 +15,18 @@
  */
 package com.lmax.disruptor.dsl;
 
-import com.lmax.disruptor.BatchEventProcessor;
-import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
+import com.lmax.disruptor.waitstrategy.BlockingWaitStrategy;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventProcessor;
 import com.lmax.disruptor.EventTranslator;
-import com.lmax.disruptor.EventTranslatorOneArg;
+import com.lmax.disruptor.event.translator.EventTranslatorOneArg;
 import com.lmax.disruptor.ExceptionHandler;
-import com.lmax.disruptor.FatalExceptionHandler;
+import com.lmax.disruptor.exception.handler.FatalExceptionHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.Sequence;
 import com.lmax.disruptor.SequenceBarrier;
-import com.lmax.disruptor.TimeoutException;
+import com.lmax.disruptor.exception.TimeoutException;
 import com.lmax.disruptor.dsl.stubs.DelayedEventHandler;
 import com.lmax.disruptor.dsl.stubs.EventHandlerStub;
 import com.lmax.disruptor.dsl.stubs.EvilEqualsEventHandler;

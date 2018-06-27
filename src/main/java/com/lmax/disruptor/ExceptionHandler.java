@@ -15,11 +15,12 @@
  */
 package com.lmax.disruptor;
 
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
+
 /**
  * Callback handler for uncaught exceptions in the event processing cycle of the {@link BatchEventProcessor}
  */
-public interface ExceptionHandler<T>
-{
+public interface ExceptionHandler<T> {
     /**
      * <p>Strategy for handling uncaught exceptions when processing an event.</p>
      *

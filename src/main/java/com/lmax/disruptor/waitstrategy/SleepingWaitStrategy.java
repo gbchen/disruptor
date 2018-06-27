@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor;
+package com.lmax.disruptor.waitstrategy;
+
+import com.lmax.disruptor.Sequence;
+import com.lmax.disruptor.SequenceBarrier;
+import com.lmax.disruptor.WaitStrategy;
+import com.lmax.disruptor.exception.AlertException;
 
 import java.util.concurrent.locks.LockSupport;
 
@@ -54,7 +59,7 @@ public final class SleepingWaitStrategy implements WaitStrategy
 
     @Override
     public long waitFor(
-        final long sequence, Sequence cursor, final Sequence dependentSequence, final SequenceBarrier barrier)
+            final long sequence, Sequence cursor, final Sequence dependentSequence, final SequenceBarrier barrier)
         throws AlertException
     {
         long availableSequence;

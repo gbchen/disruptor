@@ -23,10 +23,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.lmax.disruptor.*;
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
 import com.lmax.disruptor.support.Operation;
 import com.lmax.disruptor.support.ValueEvent;
 import com.lmax.disruptor.support.ValueMutationEventHandler;
 import com.lmax.disruptor.util.DaemonThreadFactory;
+import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
 
 /**
  * <pre>

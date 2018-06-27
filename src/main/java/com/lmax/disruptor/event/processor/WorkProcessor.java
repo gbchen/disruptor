@@ -13,7 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor;
+package com.lmax.disruptor.event.processor;
+
+import com.lmax.disruptor.EventProcessor;
+import com.lmax.disruptor.EventReleaseAware;
+import com.lmax.disruptor.EventReleaser;
+import com.lmax.disruptor.ExceptionHandler;
+import com.lmax.disruptor.LifecycleAware;
+import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.Sequence;
+import com.lmax.disruptor.SequenceBarrier;
+import com.lmax.disruptor.Sequencer;
+import com.lmax.disruptor.TimeoutHandler;
+import com.lmax.disruptor.WorkHandler;
+import com.lmax.disruptor.WorkerPool;
+import com.lmax.disruptor.exception.AlertException;
+import com.lmax.disruptor.exception.TimeoutException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,14 +43,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class WorkProcessor<T> implements EventProcessor {
 
     private final AtomicBoolean               running       = new AtomicBoolean(false);
-    private final Sequence                    sequence      = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    private final RingBuffer<T>               ringBuffer;
-    private final SequenceBarrier             sequenceBarrier;
+    private final Sequence sequence      = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    private final RingBuffer<T> ringBuffer;
+    private final SequenceBarrier sequenceBarrier;
     private final WorkHandler<? super T>      workHandler;
     private final ExceptionHandler<? super T> exceptionHandler;
     private final Sequence                    workSequence;
 
-    private final EventReleaser               eventReleaser = new EventReleaser() {
+    private final EventReleaser eventReleaser = new EventReleaser() {
 
                                                                 @Override
                                                                 public void release() {
@@ -43,7 +58,7 @@ public final class WorkProcessor<T> implements EventProcessor {
                                                                 }
                                                             };
 
-    private final TimeoutHandler              timeoutHandler;
+    private final TimeoutHandler timeoutHandler;
 
     /**
      * Construct a {@link WorkProcessor}.

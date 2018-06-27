@@ -17,6 +17,7 @@ package com.lmax.disruptor;
 
 import java.util.concurrent.locks.LockSupport;
 
+import com.lmax.disruptor.exception.InsufficientCapacityException;
 import sun.misc.Unsafe;
 
 import com.lmax.disruptor.util.Util;

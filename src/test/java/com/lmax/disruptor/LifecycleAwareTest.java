@@ -15,6 +15,7 @@
  */
 package com.lmax.disruptor;
 
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
 import com.lmax.disruptor.support.StubEvent;
 import org.junit.Test;
 

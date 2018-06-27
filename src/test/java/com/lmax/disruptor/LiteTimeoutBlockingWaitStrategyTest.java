@@ -1,6 +1,8 @@
 package com.lmax.disruptor;
 
+import com.lmax.disruptor.exception.TimeoutException;
 import com.lmax.disruptor.support.DummySequenceBarrier;
+import com.lmax.disruptor.waitstrategy.LiteTimeoutBlockingWaitStrategy;
 import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;

@@ -15,6 +15,8 @@
  */
 package com.lmax.disruptor;
 
+import com.lmax.disruptor.event.processor.BatchEventProcessor;
+
 /**
  * Used by the {@link BatchEventProcessor} to set a callback allowing the {@link EventHandler} to notify
  * when it has finished consuming an event if this happens after the {@link EventHandler#onEvent(Object, long, boolean)} call.
@@ -25,9 +27,7 @@ package com.lmax.disruptor;
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
  */
-public interface SequenceReportingEventHandler<T>
-    extends EventHandler<T>
-{
+public interface SequenceReportingEventHandler<T> extends EventHandler<T> {
     /**
      * Call by the {@link BatchEventProcessor} to setup the callback.
      *

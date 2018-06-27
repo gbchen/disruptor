@@ -19,6 +19,7 @@ import static com.lmax.disruptor.RingBuffer.createMultiProducer;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import com.lmax.disruptor.event.processor.NoOpEventProcessor;
 import org.junit.Test;
 
 import com.lmax.disruptor.support.LongEvent;
