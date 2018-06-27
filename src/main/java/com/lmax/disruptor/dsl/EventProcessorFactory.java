@@ -11,8 +11,7 @@ import com.lmax.disruptor.Sequence;
  * disruptor.handleEventsWith(handler1).then((ringBuffer, barrierSequences) -&gt; new CustomEventProcessor(ringBuffer, barrierSequences));
  * </code></pre>
  */
-public interface EventProcessorFactory<T>
-{
+public interface EventProcessorFactory<T> {
     /**
      * Create a new event processor that gates on <code>barrierSequences</code>.
      *

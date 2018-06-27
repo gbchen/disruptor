@@ -19,14 +19,14 @@ import com.lmax.disruptor.event.processor.BatchEventProcessor;
 
 /**
  * 事件处置器，与前面处理器的不同是，事件处置器不负责框架内的行为，仅仅是EventProcessor作为消费者框架对外预留的扩展点罢了
- * Callback interface to be implemented for processing events as they become available in the {@link RingBuffer}
  * 当一个RingBuffer中的事件可用的时候,回调这个待实现的接口来处理事件。
+ *
+ * Callback interface to be implemented for processing events as they become available in the {@link RingBuffer}
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
  * @see BatchEventProcessor#setExceptionHandler(ExceptionHandler) if you want to handle exceptions propagated out of the handler.
  */
-public interface EventHandler<T>
-{
+public interface EventHandler<T> {
     /**
      * Called when a publisher has published an event to the {@link RingBuffer}.  The {@link BatchEventProcessor} will
      * read messages from the {@link RingBuffer} in batches, where a batch is all of the events available to be

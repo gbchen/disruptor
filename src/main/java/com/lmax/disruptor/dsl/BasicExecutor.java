@@ -34,6 +34,9 @@ public class BasicExecutor implements Executor {
         threads.add(thread);
     }
 
+    /**
+     * 打印线程的状态信息
+     */
     @Override
     public String toString() {
         return "BasicExecutor{" + "threads=" + dumpThreadInfo() + '}';
