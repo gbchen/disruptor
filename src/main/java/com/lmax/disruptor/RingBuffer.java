@@ -29,16 +29,30 @@ import com.lmax.disruptor.util.Util;
 abstract class RingBufferPad {
 
     protected long p1, p2, p3, p4, p5, p6, p7;
+    /**
+     * 7 * 8B
+     * 七个的原因：
+     * 极端情况下，8个字为一个cpu缓存行，不会产生伪共享
+     * 假设第八个为活跃数据，那么这个缓存行也不会产生伪共享
+     *
+     * 整个RingBuffer内部做了大量的缓存行填充，前后各填充了56个字节，
+     * entries本身也根据引用大小进行了填充，假设引用大小为4字节，那么entries数组两侧就要个填充32个空数组位。
+     * 也就是说，实际的数组长度比bufferSize要大。所以可以看到根据序列从entries中取元素的方法elementAt内部做了一些调整，不是单纯的取模。
+     */
 }
 
 abstract class RingBufferFields<E> extends RingBufferPad {
 
+    /**
+     * 填充字数
+     */
     private static final int    BUFFER_PAD;
     private static final long   REF_ARRAY_BASE;
     private static final int    REF_ELEMENT_SHIFT;
     private static final Unsafe UNSAFE = Util.getUnsafe();
 
     static {
+        // 获取用户给定数组寻址的换算因子，也就是数组中每个元素引用所占字节数目
         final int scale = UNSAFE.arrayIndexScale(Object[].class);
         if (4 == scale) {
             REF_ELEMENT_SHIFT = 2;
@@ -52,6 +66,11 @@ abstract class RingBufferFields<E> extends RingBufferPad {
         REF_ARRAY_BASE = UNSAFE.arrayBaseOffset(Object[].class) + (BUFFER_PAD << REF_ELEMENT_SHIFT);
     }
 
+
+    /**
+     * 用来进行某个序号对应位置的运算
+     * 和上面的BufferPad 一共8*8B
+     */
     private final long        indexMask;
     private final Object[]    entries;
     protected final int       bufferSize;
@@ -64,15 +83,21 @@ abstract class RingBufferFields<E> extends RingBufferPad {
         if (bufferSize < 1) {
             throw new IllegalArgumentException("bufferSize must not be less than 1");
         }
+
+        //bufferSize必须是2的倍数
         if (Integer.bitCount(bufferSize) != 1) {
             throw new IllegalArgumentException("bufferSize must be a power of 2");
         }
 
         this.indexMask = bufferSize - 1;
+        //数组大小，为BufferSize + 2*BufferPad
         this.entries = new Object[sequencer.getBufferSize() + 2 * BUFFER_PAD];
         fill(eventFactory);
     }
 
+    /**
+     * 预初始化，填充数组指向的对象
+     */
     private void fill(EventFactory<E> eventFactory) {
         for (int i = 0; i < bufferSize; i++) {
             entries[BUFFER_PAD + i] = eventFactory.newInstance();
