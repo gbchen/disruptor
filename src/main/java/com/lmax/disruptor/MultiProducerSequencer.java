@@ -147,8 +147,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
      * @see Sequencer#tryNext()
      */
     @Override
-    public long tryNext() throws InsufficientCapacityException
-    {
+    public long tryNext() throws InsufficientCapacityException {
         return tryNext(1);
     }
 
@@ -156,27 +155,22 @@ public final class MultiProducerSequencer extends AbstractSequencer {
      * @see Sequencer#tryNext(int)
      */
     @Override
-    public long tryNext(int n) throws InsufficientCapacityException
-    {
-        if (n < 1)
-        {
+    public long tryNext(int n) throws InsufficientCapacityException {
+        if (n < 1) {
             throw new IllegalArgumentException("n must be > 0");
         }
 
         long current;
         long next;
 
-        do
-        {
+        do {
             current = cursor.get();
             next = current + n;
 
-            if (!hasAvailableCapacity(gatingSequences, n, current))
-            {
+            if (!hasAvailableCapacity(gatingSequences, n, current)) {
                 throw InsufficientCapacityException.INSTANCE;
             }
-        }
-        while (!cursor.compareAndSet(current, next));
+        } while (!cursor.compareAndSet(current, next));
 
         return next;
     }
@@ -185,17 +179,14 @@ public final class MultiProducerSequencer extends AbstractSequencer {
      * @see Sequencer#remainingCapacity()
      */
     @Override
-    public long remainingCapacity()
-    {
+    public long remainingCapacity() {
         long consumed = Util.getMinimumSequence(gatingSequences, cursor.get());
         long produced = cursor.get();
         return getBufferSize() - (produced - consumed);
     }
 
-    private void initialiseAvailableBuffer()
-    {
-        for (int i = availableBuffer.length - 1; i != 0; i--)
-        {
+    private void initialiseAvailableBuffer() {
+        for (int i = availableBuffer.length - 1; i != 0; i--) {
             setAvailableBufferValue(i, -1);
         }
 

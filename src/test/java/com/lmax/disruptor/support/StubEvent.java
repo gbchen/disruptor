@@ -18,62 +18,55 @@ package com.lmax.disruptor.support;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.event.translator.EventTranslatorTwoArg;
 
-public final class StubEvent
-{
-    private int value;
-    private String testString;
-    public static final EventTranslatorTwoArg<StubEvent, Integer, String> TRANSLATOR =
-        new EventTranslatorTwoArg<StubEvent, Integer, String>()
-        {
-            @Override
-            public void translateTo(StubEvent event, long sequence, Integer arg0, String arg1)
-            {
-                event.setValue(arg0);
-                event.setTestString(arg1);
-            }
-        };
+public final class StubEvent {
 
-    public StubEvent(int i)
-    {
+    private int                                                           value;
+    private String                                                        testString;
+    public static final EventTranslatorTwoArg<StubEvent, Integer, String> TRANSLATOR = new EventTranslatorTwoArg<StubEvent, Integer, String>() {
+
+                                                                                         @Override
+                                                                                         public void translateTo(StubEvent event,
+                                                                                                                 long sequence,
+                                                                                                                 Integer arg0,
+                                                                                                                 String arg1) {
+                                                                                             event.setValue(arg0);
+                                                                                             event.setTestString(arg1);
+                                                                                         }
+                                                                                     };
+
+    public StubEvent(int i) {
         this.value = i;
     }
 
-    public void copy(StubEvent event)
-    {
+    public void copy(StubEvent event) {
         value = event.value;
     }
 
-    public int getValue()
-    {
+    public int getValue() {
         return value;
     }
 
-    public void setValue(int value)
-    {
+    public void setValue(int value) {
         this.value = value;
     }
 
-    public String getTestString()
-    {
+    public String getTestString() {
         return testString;
     }
 
-    public void setTestString(final String testString)
-    {
+    public void setTestString(final String testString) {
         this.testString = testString;
     }
 
-    public static final EventFactory<StubEvent> EVENT_FACTORY = new EventFactory<StubEvent>()
-    {
-        public StubEvent newInstance()
-        {
+    public static final EventFactory<StubEvent> EVENT_FACTORY = new EventFactory<StubEvent>() {
+
+        public StubEvent newInstance() {
             return new StubEvent(-1);
         }
     };
 
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + value;
@@ -81,18 +74,14 @@ public final class StubEvent
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
-        if (this == obj)
-        {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (obj == null)
-        {
+        if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass())
-        {
+        if (getClass() != obj.getClass()) {
             return false;
         }
         StubEvent other = (StubEvent) obj;
