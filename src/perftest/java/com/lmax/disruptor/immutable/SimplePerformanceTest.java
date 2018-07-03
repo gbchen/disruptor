@@ -7,50 +7,40 @@ import com.lmax.disruptor.event.translator.EventTranslatorOneArg;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
 
-public class SimplePerformanceTest
-{
-    private final RingBuffer<EventHolder> ringBuffer;
-    private final EventHolderHandler eventHolderHandler;
+public class SimplePerformanceTest {
 
-    public SimplePerformanceTest()
-    {
+    private final RingBuffer<EventHolder> ringBuffer;
+    private final EventHolderHandler      eventHolderHandler;
+
+    public SimplePerformanceTest() {
         ringBuffer = RingBuffer.createSingleProducer(EventHolder.FACTORY, Constants.SIZE, new YieldingWaitStrategy());
         eventHolderHandler = new EventHolderHandler(new SimpleEventHandler());
     }
 
-    public void run()
-    {
-        try
-        {
+    public void run() {
+        try {
             doRun();
-        }
-        catch (InterruptedException e)
-        {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    private void doRun() throws InterruptedException
-    {
-        BatchEventProcessor<EventHolder> batchEventProcessor =
-            new BatchEventProcessor<EventHolder>(
-                ringBuffer,
-                ringBuffer.newBarrier(),
-                eventHolderHandler);
+    private void doRun() throws InterruptedException {
+        BatchEventProcessor<EventHolder> batchEventProcessor = new BatchEventProcessor<EventHolder>(ringBuffer,
+                                                                                                    ringBuffer.newBarrier(),
+                                                                                                    eventHolderHandler);
         ringBuffer.addGatingSequences(batchEventProcessor.getSequence());
 
         Thread t = new Thread(batchEventProcessor);
         t.start();
 
         long iterations = Constants.ITERATIONS;
-        for (long l = 0; l < iterations; l++)
-        {
+        for (long l = 0; l < iterations; l++) {
             SimpleEvent e = new SimpleEvent(l, l, l, l);
             ringBuffer.publishEvent(TRANSLATOR, e);
         }
 
-        while (batchEventProcessor.getSequence().get() != iterations - 1)
-        {
+        while (batchEventProcessor.getSequence().get() != iterations - 1) {
             LockSupport.parkNanos(1);
         }
 
@@ -58,18 +48,15 @@ public class SimplePerformanceTest
         t.join();
     }
 
-    private static final EventTranslatorOneArg<EventHolder, SimpleEvent> TRANSLATOR =
-        new EventTranslatorOneArg<EventHolder, SimpleEvent>()
-        {
-            @Override
-            public void translateTo(EventHolder holder, long arg1, SimpleEvent event)
-            {
-                holder.event = event;
-            }
-        };
+    private static final EventTranslatorOneArg<EventHolder, SimpleEvent> TRANSLATOR = new EventTranslatorOneArg<EventHolder, SimpleEvent>() {
 
-    public static void main(String[] args)
-    {
+        @Override
+        public void translateTo(EventHolder holder, long arg1, SimpleEvent event) {
+            holder.event = event;
+        }
+    };
+
+    public static void main(String[] args) {
         new SimplePerformanceTest().run();
     }
 }

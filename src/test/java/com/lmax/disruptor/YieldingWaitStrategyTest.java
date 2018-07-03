@@ -20,12 +20,10 @@ import static com.lmax.disruptor.support.WaitStrategyTestUtil.assertWaitForWithD
 import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
 import org.junit.Test;
 
-public class YieldingWaitStrategyTest
-{
+public class YieldingWaitStrategyTest {
 
     @Test
-    public void shouldWaitForValue() throws Exception
-    {
+    public void shouldWaitForValue() throws Exception {
         assertWaitForWithDelayOf(50, new YieldingWaitStrategy());
     }
 }

@@ -28,47 +28,36 @@ import com.lmax.disruptor.util.DaemonThreadFactory;
 import com.lmax.disruptor.util.PaddedLong;
 import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
 
-public final class OneToThreeReleasingWorkerPoolThroughputTest
-    extends AbstractPerfTestDisruptor
-{
-    private static final int NUM_WORKERS = 3;
-    private static final int BUFFER_SIZE = 1024 * 8;
-    private static final long ITERATIONS = 1000L * 1000 * 10L;
-    private final ExecutorService executor = Executors.newFixedThreadPool(NUM_WORKERS, DaemonThreadFactory.INSTANCE);
+public final class OneToThreeReleasingWorkerPoolThroughputTest extends AbstractPerfTestDisruptor {
 
-    private final PaddedLong[] counters = new PaddedLong[NUM_WORKERS];
+    private static final int      NUM_WORKERS = 3;
+    private static final int      BUFFER_SIZE = 1024 * 8;
+    private static final long     ITERATIONS  = 1000L * 1000 * 10L;
+    private final ExecutorService executor    = Executors.newFixedThreadPool(NUM_WORKERS, DaemonThreadFactory.INSTANCE);
+
+    private final PaddedLong[]    counters    = new PaddedLong[NUM_WORKERS];
 
     {
-        for (int i = 0; i < NUM_WORKERS; i++)
-        {
+        for (int i = 0; i < NUM_WORKERS; i++) {
             counters[i] = new PaddedLong();
         }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    private final EventCountingAndReleasingWorkHandler[] handlers =
-        new EventCountingAndReleasingWorkHandler[NUM_WORKERS];
+    private final EventCountingAndReleasingWorkHandler[] handlers = new EventCountingAndReleasingWorkHandler[NUM_WORKERS];
 
     {
-        for (int i = 0; i < NUM_WORKERS; i++)
-        {
+        for (int i = 0; i < NUM_WORKERS; i++) {
             handlers[i] = new EventCountingAndReleasingWorkHandler(counters, i);
         }
     }
 
-    private final RingBuffer<ValueEvent> ringBuffer =
-        RingBuffer.createSingleProducer(
-            ValueEvent.EVENT_FACTORY,
-            BUFFER_SIZE,
-            new YieldingWaitStrategy());
+    private final RingBuffer<ValueEvent> ringBuffer = RingBuffer.createSingleProducer(ValueEvent.EVENT_FACTORY, BUFFER_SIZE,
+                                                                                      new YieldingWaitStrategy());
 
-    private final WorkerPool<ValueEvent> workerPool =
-        new WorkerPool<ValueEvent>(
-            ringBuffer,
-            ringBuffer.newBarrier(),
-            new FatalExceptionHandler(),
-            handlers);
+    private final WorkerPool<ValueEvent> workerPool = new WorkerPool<ValueEvent>(ringBuffer, ringBuffer.newBarrier(),
+                                                                                 new FatalExceptionHandler(), handlers);
 
     {
         ringBuffer.addGatingSequences(workerPool.getWorkerSequences());
@@ -77,22 +66,19 @@ public final class OneToThreeReleasingWorkerPoolThroughputTest
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    protected int getRequiredProcessorCount()
-    {
+    protected int getRequiredProcessorCount() {
         return 4;
     }
 
     @Override
-    protected PerfTestContext runDisruptorPass() throws InterruptedException
-    {
+    protected PerfTestContext runDisruptorPass() throws InterruptedException {
         PerfTestContext perfTestContext = new PerfTestContext();
 
         resetCounters();
         RingBuffer<ValueEvent> ringBuffer = workerPool.start(executor);
         long start = System.currentTimeMillis();
 
-        for (long i = 0; i < ITERATIONS; i++)
-        {
+        for (long i = 0; i < ITERATIONS; i++) {
             long sequence = ringBuffer.next();
             ringBuffer.get(sequence).setValue(i);
             ringBuffer.publish(sequence);
@@ -110,27 +96,22 @@ public final class OneToThreeReleasingWorkerPoolThroughputTest
         return perfTestContext;
     }
 
-    private void resetCounters()
-    {
-        for (int i = 0; i < NUM_WORKERS; i++)
-        {
+    private void resetCounters() {
+        for (int i = 0; i < NUM_WORKERS; i++) {
             counters[i].set(0L);
         }
     }
 
-    private long sumCounters()
-    {
+    private long sumCounters() {
         long sumJobs = 0L;
-        for (int i = 0; i < NUM_WORKERS; i++)
-        {
+        for (int i = 0; i < NUM_WORKERS; i++) {
             sumJobs += counters[i].get();
         }
 
         return sumJobs;
     }
 
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
         new OneToThreeReleasingWorkerPoolThroughputTest().testImplementations();
     }
 }

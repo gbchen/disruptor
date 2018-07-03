@@ -72,18 +72,18 @@ import com.lmax.disruptor.util.DaemonThreadFactory;
  *
  * </pre>
  */
-public final class OneToThreeQueueThroughputTest extends AbstractPerfTestQueue
-{
-    private static final int NUM_EVENT_PROCESSORS = 3;
-    private static final int BUFFER_SIZE = 1024 * 8;
-    private static final long ITERATIONS = 1000L * 1000L * 1L;
-    private final ExecutorService executor = Executors.newFixedThreadPool(NUM_EVENT_PROCESSORS, DaemonThreadFactory.INSTANCE);
+public final class OneToThreeQueueThroughputTest extends AbstractPerfTestQueue {
 
-    private final long[] results = new long[NUM_EVENT_PROCESSORS];
+    private static final int      NUM_EVENT_PROCESSORS = 3;
+    private static final int      BUFFER_SIZE          = 1024 * 8;
+    private static final long     ITERATIONS           = 1000L * 1000L * 1L;
+    private final ExecutorService executor             = Executors.newFixedThreadPool(NUM_EVENT_PROCESSORS,
+                                                                                      DaemonThreadFactory.INSTANCE);
+
+    private final long[]          results              = new long[NUM_EVENT_PROCESSORS];
 
     {
-        for (long i = 0; i < ITERATIONS; i++)
-        {
+        for (long i = 0; i < ITERATIONS; i++) {
             results[0] = Operation.ADDITION.op(results[0], i);
             results[1] = Operation.SUBTRACTION.op(results[1], i);
             results[2] = Operation.AND.op(results[2], i);
@@ -112,37 +112,31 @@ public final class OneToThreeQueueThroughputTest extends AbstractPerfTestQueue
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    protected int getRequiredProcessorCount()
-    {
+    protected int getRequiredProcessorCount() {
         return 4;
     }
 
     @Override
-    protected long runQueuePass() throws InterruptedException
-    {
+    protected long runQueuePass() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(NUM_EVENT_PROCESSORS);
         Future<?>[] futures = new Future[NUM_EVENT_PROCESSORS];
-        for (int i = 0; i < NUM_EVENT_PROCESSORS; i++)
-        {
+        for (int i = 0; i < NUM_EVENT_PROCESSORS; i++) {
             queueProcessors[i].reset(latch);
             futures[i] = executor.submit(queueProcessors[i]);
         }
 
         long start = System.currentTimeMillis();
 
-        for (long i = 0; i < ITERATIONS; i++)
-        {
+        for (long i = 0; i < ITERATIONS; i++) {
             final Long value = Long.valueOf(i);
-            for (BlockingQueue<Long> queue : blockingQueues)
-            {
+            for (BlockingQueue<Long> queue : blockingQueues) {
                 queue.put(value);
             }
         }
 
         latch.await();
         long opsPerSecond = (ITERATIONS * 1000L) / (System.currentTimeMillis() - start);
-        for (int i = 0; i < NUM_EVENT_PROCESSORS; i++)
-        {
+        for (int i = 0; i < NUM_EVENT_PROCESSORS; i++) {
             queueProcessors[i].halt();
             futures[i].cancel(true);
             failIf(queueProcessors[i].getValue(), -1);
@@ -151,8 +145,7 @@ public final class OneToThreeQueueThroughputTest extends AbstractPerfTestQueue
         return opsPerSecond;
     }
 
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
         new OneToThreeQueueThroughputTest().testImplementations();
     }
 }

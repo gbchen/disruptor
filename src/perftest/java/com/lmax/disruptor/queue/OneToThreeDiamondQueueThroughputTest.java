@@ -96,25 +96,24 @@ import com.lmax.disruptor.util.DaemonThreadFactory;
  *
  * </pre>
  */
-public final class OneToThreeDiamondQueueThroughputTest extends AbstractPerfTestQueue
-{
-    private static final int NUM_EVENT_PROCESSORS = 3;
-    private static final int BUFFER_SIZE = 1024 * 8;
-    private static final long ITERATIONS = 1000L * 1000L * 100L;
-    private final ExecutorService executor = Executors.newFixedThreadPool(NUM_EVENT_PROCESSORS, DaemonThreadFactory.INSTANCE);
+public final class OneToThreeDiamondQueueThroughputTest extends AbstractPerfTestQueue {
 
-    private final long expectedResult;
+    private static final int      NUM_EVENT_PROCESSORS = 3;
+    private static final int      BUFFER_SIZE          = 1024 * 8;
+    private static final long     ITERATIONS           = 1000L * 1000L * 100L;
+    private final ExecutorService executor             = Executors.newFixedThreadPool(NUM_EVENT_PROCESSORS,
+                                                                                      DaemonThreadFactory.INSTANCE);
+
+    private final long            expectedResult;
 
     {
         long temp = 0L;
 
-        for (long i = 0; i < ITERATIONS; i++)
-        {
+        for (long i = 0; i < ITERATIONS; i++) {
             boolean fizz = 0 == (i % 3L);
             boolean buzz = 0 == (i % 5L);
 
-            if (fizz && buzz)
-            {
+            if (fizz && buzz) {
                 ++temp;
             }
         }
@@ -124,31 +123,33 @@ public final class OneToThreeDiamondQueueThroughputTest extends AbstractPerfTest
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    private final BlockingQueue<Long> fizzInputQueue = new LinkedBlockingQueue<Long>(BUFFER_SIZE);
-    private final BlockingQueue<Long> buzzInputQueue = new LinkedBlockingQueue<Long>(BUFFER_SIZE);
-    private final BlockingQueue<Boolean> fizzOutputQueue = new LinkedBlockingQueue<Boolean>(BUFFER_SIZE);
-    private final BlockingQueue<Boolean> buzzOutputQueue = new LinkedBlockingQueue<Boolean>(BUFFER_SIZE);
+    private final BlockingQueue<Long>    fizzInputQueue         = new LinkedBlockingQueue<Long>(BUFFER_SIZE);
+    private final BlockingQueue<Long>    buzzInputQueue         = new LinkedBlockingQueue<Long>(BUFFER_SIZE);
+    private final BlockingQueue<Boolean> fizzOutputQueue        = new LinkedBlockingQueue<Boolean>(BUFFER_SIZE);
+    private final BlockingQueue<Boolean> buzzOutputQueue        = new LinkedBlockingQueue<Boolean>(BUFFER_SIZE);
 
-    private final FizzBuzzQueueProcessor fizzQueueProcessor =
-        new FizzBuzzQueueProcessor(FizzBuzzStep.FIZZ, fizzInputQueue, buzzInputQueue, fizzOutputQueue, buzzOutputQueue, ITERATIONS - 1);
+    private final FizzBuzzQueueProcessor fizzQueueProcessor     = new FizzBuzzQueueProcessor(FizzBuzzStep.FIZZ, fizzInputQueue,
+                                                                                             buzzInputQueue, fizzOutputQueue,
+                                                                                             buzzOutputQueue, ITERATIONS - 1);
 
-    private final FizzBuzzQueueProcessor buzzQueueProcessor =
-        new FizzBuzzQueueProcessor(FizzBuzzStep.BUZZ, fizzInputQueue, buzzInputQueue, fizzOutputQueue, buzzOutputQueue, ITERATIONS - 1);
+    private final FizzBuzzQueueProcessor buzzQueueProcessor     = new FizzBuzzQueueProcessor(FizzBuzzStep.BUZZ, fizzInputQueue,
+                                                                                             buzzInputQueue, fizzOutputQueue,
+                                                                                             buzzOutputQueue, ITERATIONS - 1);
 
-    private final FizzBuzzQueueProcessor fizzBuzzQueueProcessor =
-        new FizzBuzzQueueProcessor(FizzBuzzStep.FIZZ_BUZZ, fizzInputQueue, buzzInputQueue, fizzOutputQueue, buzzOutputQueue, ITERATIONS - 1);
+    private final FizzBuzzQueueProcessor fizzBuzzQueueProcessor = new FizzBuzzQueueProcessor(FizzBuzzStep.FIZZ_BUZZ,
+                                                                                             fizzInputQueue, buzzInputQueue,
+                                                                                             fizzOutputQueue, buzzOutputQueue,
+                                                                                             ITERATIONS - 1);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    protected int getRequiredProcessorCount()
-    {
+    protected int getRequiredProcessorCount() {
         return 4;
     }
 
     @Override
-    protected long runQueuePass() throws Exception
-    {
+    protected long runQueuePass() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         fizzBuzzQueueProcessor.reset(latch);
 
@@ -159,8 +160,7 @@ public final class OneToThreeDiamondQueueThroughputTest extends AbstractPerfTest
 
         long start = System.currentTimeMillis();
 
-        for (long i = 0; i < ITERATIONS; i++)
-        {
+        for (long i = 0; i < ITERATIONS; i++) {
             Long value = Long.valueOf(i);
             fizzInputQueue.put(value);
             buzzInputQueue.put(value);
@@ -173,8 +173,7 @@ public final class OneToThreeDiamondQueueThroughputTest extends AbstractPerfTest
         buzzQueueProcessor.halt();
         fizzBuzzQueueProcessor.halt();
 
-        for (Future<?> future : futures)
-        {
+        for (Future<?> future : futures) {
             future.cancel(true);
         }
 
@@ -183,8 +182,7 @@ public final class OneToThreeDiamondQueueThroughputTest extends AbstractPerfTest
         return opsPerSecond;
     }
 
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
         new OneToThreeDiamondQueueThroughputTest().testImplementations();
     }
 }

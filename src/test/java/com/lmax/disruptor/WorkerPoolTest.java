@@ -13,16 +13,14 @@ import org.junit.Test;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 
 
-public class WorkerPoolTest
-{
+public class WorkerPoolTest {
+
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldProcessEachMessageByOnlyOneWorker() throws Exception
-    {
+    public void shouldProcessEachMessageByOnlyOneWorker() throws Exception {
         Executor executor = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
-        WorkerPool<AtomicLong> pool = new WorkerPool<AtomicLong>(
-            new AtomicLongEventFactory(), new FatalExceptionHandler(),
-            new AtomicLongWorkHandler(), new AtomicLongWorkHandler());
+        WorkerPool<AtomicLong> pool = new WorkerPool<AtomicLong>(new AtomicLongEventFactory(), new FatalExceptionHandler(),
+                                                                 new AtomicLongWorkHandler(), new AtomicLongWorkHandler());
 
         RingBuffer<AtomicLong> ringBuffer = pool.start(executor);
 
@@ -39,12 +37,10 @@ public class WorkerPoolTest
 
     @SuppressWarnings("unchecked")
     @Test
-    public void shouldProcessOnlyOnceItHasBeenPublished() throws Exception
-    {
+    public void shouldProcessOnlyOnceItHasBeenPublished() throws Exception {
         Executor executor = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
-        WorkerPool<AtomicLong> pool = new WorkerPool<AtomicLong>(
-            new AtomicLongEventFactory(), new FatalExceptionHandler(),
-            new AtomicLongWorkHandler(), new AtomicLongWorkHandler());
+        WorkerPool<AtomicLong> pool = new WorkerPool<AtomicLong>(new AtomicLongEventFactory(), new FatalExceptionHandler(),
+                                                                 new AtomicLongWorkHandler(), new AtomicLongWorkHandler());
 
         RingBuffer<AtomicLong> ringBuffer = pool.start(executor);
 
@@ -57,21 +53,18 @@ public class WorkerPoolTest
         assertThat(ringBuffer.get(1).get(), is(0L));
     }
 
-    private static class AtomicLongWorkHandler implements WorkHandler<AtomicLong>
-    {
+    private static class AtomicLongWorkHandler implements WorkHandler<AtomicLong> {
+
         @Override
-        public void onEvent(AtomicLong event) throws Exception
-        {
+        public void onEvent(AtomicLong event) throws Exception {
             event.incrementAndGet();
         }
     }
 
+    private static class AtomicLongEventFactory implements EventFactory<AtomicLong> {
 
-    private static class AtomicLongEventFactory implements EventFactory<AtomicLong>
-    {
         @Override
-        public AtomicLong newInstance()
-        {
+        public AtomicLong newInstance() {
             return new AtomicLong(0);
         }
     }

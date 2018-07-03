@@ -69,46 +69,44 @@ import com.lmax.disruptor.util.DaemonThreadFactory;
  *
  * </pre>
  */
-public final class ThreeToOneQueueThroughputTest extends AbstractPerfTestQueue
-{
-    private static final int NUM_PUBLISHERS = 3;
-    private static final int BUFFER_SIZE = 1024 * 64;
-    private static final long ITERATIONS = 1000L * 1000L * 20L;
-    private final ExecutorService executor = Executors.newFixedThreadPool(NUM_PUBLISHERS + 1, DaemonThreadFactory.INSTANCE);
-    private final CyclicBarrier cyclicBarrier = new CyclicBarrier(NUM_PUBLISHERS + 1);
+public final class ThreeToOneQueueThroughputTest extends AbstractPerfTestQueue {
+
+    private static final int                  NUM_PUBLISHERS       = 3;
+    private static final int                  BUFFER_SIZE          = 1024 * 64;
+    private static final long                 ITERATIONS           = 1000L * 1000L * 20L;
+    private final ExecutorService             executor             = Executors.newFixedThreadPool(NUM_PUBLISHERS + 1,
+                                                                                                  DaemonThreadFactory.INSTANCE);
+    private final CyclicBarrier               cyclicBarrier        = new CyclicBarrier(NUM_PUBLISHERS + 1);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    private final BlockingQueue<Long> blockingQueue = new LinkedBlockingQueue<Long>(BUFFER_SIZE);
-    private final ValueAdditionQueueProcessor queueProcessor =
-        new ValueAdditionQueueProcessor(blockingQueue, ((ITERATIONS / NUM_PUBLISHERS) * NUM_PUBLISHERS) - 1L);
-    private final ValueQueuePublisher[] valueQueuePublishers = new ValueQueuePublisher[NUM_PUBLISHERS];
+    private final BlockingQueue<Long>         blockingQueue        = new LinkedBlockingQueue<Long>(BUFFER_SIZE);
+    private final ValueAdditionQueueProcessor queueProcessor       = new ValueAdditionQueueProcessor(blockingQueue,
+                                                                                                     ((ITERATIONS
+                                                                                                       / NUM_PUBLISHERS)
+                                                                                                      * NUM_PUBLISHERS) - 1L);
+    private final ValueQueuePublisher[]       valueQueuePublishers = new ValueQueuePublisher[NUM_PUBLISHERS];
 
     {
-        for (int i = 0; i < NUM_PUBLISHERS; i++)
-        {
-            valueQueuePublishers[i] =
-                new ValueQueuePublisher(cyclicBarrier, blockingQueue, ITERATIONS / NUM_PUBLISHERS);
+        for (int i = 0; i < NUM_PUBLISHERS; i++) {
+            valueQueuePublishers[i] = new ValueQueuePublisher(cyclicBarrier, blockingQueue, ITERATIONS / NUM_PUBLISHERS);
         }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    protected int getRequiredProcessorCount()
-    {
+    protected int getRequiredProcessorCount() {
         return 4;
     }
 
     @Override
-    protected long runQueuePass() throws Exception
-    {
+    protected long runQueuePass() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         queueProcessor.reset(latch);
 
         Future<?>[] futures = new Future[NUM_PUBLISHERS];
-        for (int i = 0; i < NUM_PUBLISHERS; i++)
-        {
+        for (int i = 0; i < NUM_PUBLISHERS; i++) {
             futures[i] = executor.submit(valueQueuePublishers[i]);
         }
         Future<?> processorFuture = executor.submit(queueProcessor);
@@ -116,8 +114,7 @@ public final class ThreeToOneQueueThroughputTest extends AbstractPerfTestQueue
         long start = System.currentTimeMillis();
         cyclicBarrier.await();
 
-        for (int i = 0; i < NUM_PUBLISHERS; i++)
-        {
+        for (int i = 0; i < NUM_PUBLISHERS; i++) {
             futures[i].get();
         }
 
@@ -130,8 +127,7 @@ public final class ThreeToOneQueueThroughputTest extends AbstractPerfTestQueue
         return opsPerSecond;
     }
 
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
         new ThreeToOneQueueThroughputTest().testImplementations();
     }
 }
