@@ -1,4 +1,4 @@
-package myExample;
+package myExample.disruptor;
 
 import com.lmax.disruptor.RingBuffer;
 

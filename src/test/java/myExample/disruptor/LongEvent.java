@@ -1,4 +1,4 @@
-package myExample;
+package myExample.disruptor;
 
 /**
  * @author cgb

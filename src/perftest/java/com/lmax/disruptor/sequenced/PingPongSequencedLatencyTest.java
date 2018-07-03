@@ -65,31 +65,31 @@ import com.lmax.disruptor.util.DaemonThreadFactory;
  * <p>
  * Note: <b>This test is only useful on a system using an invariant TSC in user space from the System.nanoTime() call.</b>
  */
-public final class PingPongSequencedLatencyTest
-{
-    private static final int BUFFER_SIZE = 1024;
-    private static final long ITERATIONS = 100L * 1000L * 30L;
-    private static final long PAUSE_NANOS = 1000L;
-    private final ExecutorService executor = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
+public final class PingPongSequencedLatencyTest {
 
-    private final Histogram histogram = new Histogram(10000000000L, 4);
+    private static final int                      BUFFER_SIZE   = 1024;
+    private static final long                     ITERATIONS    = 100L * 1000L * 30L;
+    private static final long                     PAUSE_NANOS   = 1000L;
+    private final ExecutorService                 executor      = Executors.newCachedThreadPool(DaemonThreadFactory.INSTANCE);
+
+    private final Histogram                       histogram     = new Histogram(10000000000L, 4);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    private final RingBuffer<ValueEvent> pingBuffer =
-        createSingleProducer(ValueEvent.EVENT_FACTORY, BUFFER_SIZE, new BlockingWaitStrategy());
-    private final RingBuffer<ValueEvent> pongBuffer =
-        createSingleProducer(ValueEvent.EVENT_FACTORY, BUFFER_SIZE, new BlockingWaitStrategy());
+    private final RingBuffer<ValueEvent>          pingBuffer    = createSingleProducer(ValueEvent.EVENT_FACTORY, BUFFER_SIZE,
+                                                                                       new BlockingWaitStrategy());
+    private final RingBuffer<ValueEvent>          pongBuffer    = createSingleProducer(ValueEvent.EVENT_FACTORY, BUFFER_SIZE,
+                                                                                       new BlockingWaitStrategy());
 
-    private final SequenceBarrier pongBarrier = pongBuffer.newBarrier();
-    private final Pinger pinger = new Pinger(pingBuffer, ITERATIONS, PAUSE_NANOS);
-    private final BatchEventProcessor<ValueEvent> pingProcessor =
-        new BatchEventProcessor<ValueEvent>(pongBuffer, pongBarrier, pinger);
+    private final SequenceBarrier                 pongBarrier   = pongBuffer.newBarrier();
+    private final Pinger                          pinger        = new Pinger(pingBuffer, ITERATIONS, PAUSE_NANOS);
+    private final BatchEventProcessor<ValueEvent> pingProcessor = new BatchEventProcessor<ValueEvent>(pongBuffer, pongBarrier,
+                                                                                                      pinger);
 
-    private final SequenceBarrier pingBarrier = pingBuffer.newBarrier();
-    private final Ponger ponger = new Ponger(pongBuffer);
-    private final BatchEventProcessor<ValueEvent> pongProcessor =
-        new BatchEventProcessor<ValueEvent>(pingBuffer, pingBarrier, ponger);
+    private final SequenceBarrier                 pingBarrier   = pingBuffer.newBarrier();
+    private final Ponger                          ponger        = new Ponger(pongBuffer);
+    private final BatchEventProcessor<ValueEvent> pongProcessor = new BatchEventProcessor<ValueEvent>(pingBuffer, pingBarrier,
+                                                                                                      ponger);
 
     {
         pingBuffer.addGatingSequences(pongProcessor.getSequence());
@@ -98,12 +98,10 @@ public final class PingPongSequencedLatencyTest
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    public void shouldCompareDisruptorVsQueues() throws Exception
-    {
+    public void shouldCompareDisruptorVsQueues() throws Exception {
         final int runs = 3;
 
-        for (int i = 0; i < runs; i++)
-        {
+        for (int i = 0; i < runs; i++) {
             System.gc();
             histogram.reset();
 
@@ -114,13 +112,11 @@ public final class PingPongSequencedLatencyTest
         }
     }
 
-    private static void dumpHistogram(final Histogram histogram, final PrintStream out)
-    {
+    private static void dumpHistogram(final Histogram histogram, final PrintStream out) {
         histogram.outputPercentileDistribution(out, 1, 1000.0);
     }
 
-    private void runDisruptorPass() throws InterruptedException, BrokenBarrierException
-    {
+    private void runDisruptorPass() throws InterruptedException, BrokenBarrierException {
         final CountDownLatch latch = new CountDownLatch(1);
         final CyclicBarrier barrier = new CyclicBarrier(3);
         pinger.reset(barrier, latch, histogram);
@@ -136,55 +132,47 @@ public final class PingPongSequencedLatencyTest
         pongProcessor.halt();
     }
 
-    public static void main(final String[] args) throws Exception
-    {
+    public static void main(final String[] args) throws Exception {
         final PingPongSequencedLatencyTest test = new PingPongSequencedLatencyTest();
         test.shouldCompareDisruptorVsQueues();
     }
 
-    private static class Pinger implements EventHandler<ValueEvent>, LifecycleAware
-    {
+    private static class Pinger implements EventHandler<ValueEvent>, LifecycleAware {
+
         private final RingBuffer<ValueEvent> buffer;
-        private final long maxEvents;
-        private final long pauseTimeNs;
+        private final long                   maxEvents;
+        private final long                   pauseTimeNs;
 
-        private long counter = 0;
-        private CyclicBarrier barrier;
-        private CountDownLatch latch;
-        private Histogram histogram;
-        private long t0;
+        private long                         counter = 0;
+        private CyclicBarrier                barrier;
+        private CountDownLatch               latch;
+        private Histogram                    histogram;
+        private long                         t0;
 
-        Pinger(final RingBuffer<ValueEvent> buffer, final long maxEvents, final long pauseTimeNs)
-        {
+        Pinger(final RingBuffer<ValueEvent> buffer, final long maxEvents, final long pauseTimeNs) {
             this.buffer = buffer;
             this.maxEvents = maxEvents;
             this.pauseTimeNs = pauseTimeNs;
         }
 
         @Override
-        public void onEvent(final ValueEvent event, final long sequence, final boolean endOfBatch) throws Exception
-        {
+        public void onEvent(final ValueEvent event, final long sequence, final boolean endOfBatch) throws Exception {
             final long t1 = System.nanoTime();
 
             histogram.recordValueWithExpectedInterval(t1 - t0, pauseTimeNs);
 
-            if (event.getValue() < maxEvents)
-            {
-                while (pauseTimeNs > (System.nanoTime() - t1))
-                {
+            if (event.getValue() < maxEvents) {
+                while (pauseTimeNs > (System.nanoTime() - t1)) {
                     Thread.yield();
                 }
 
                 send();
-            }
-            else
-            {
+            } else {
                 latch.countDown();
             }
         }
 
-        private void send()
-        {
+        private void send() {
             t0 = System.nanoTime();
             final long next = buffer.next();
             buffer.get(next).setValue(counter);
@@ -194,28 +182,22 @@ public final class PingPongSequencedLatencyTest
         }
 
         @Override
-        public void onStart()
-        {
-            try
-            {
+        public void onStart() {
+            try {
                 barrier.await();
 
                 Thread.sleep(1000);
                 send();
-            }
-            catch (final Exception e)
-            {
+            } catch (final Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
         @Override
-        public void onShutdown()
-        {
+        public void onShutdown() {
         }
 
-        public void reset(final CyclicBarrier barrier, final CountDownLatch latch, final Histogram histogram)
-        {
+        public void reset(final CyclicBarrier barrier, final CountDownLatch latch, final Histogram histogram) {
             this.histogram = histogram;
             this.barrier = barrier;
             this.latch = latch;
@@ -224,45 +206,37 @@ public final class PingPongSequencedLatencyTest
         }
     }
 
-    private static class Ponger implements EventHandler<ValueEvent>, LifecycleAware
-    {
+    private static class Ponger implements EventHandler<ValueEvent>, LifecycleAware {
+
         private final RingBuffer<ValueEvent> buffer;
 
-        private CyclicBarrier barrier;
+        private CyclicBarrier                barrier;
 
-        Ponger(final RingBuffer<ValueEvent> buffer)
-        {
+        Ponger(final RingBuffer<ValueEvent> buffer) {
             this.buffer = buffer;
         }
 
         @Override
-        public void onEvent(final ValueEvent event, final long sequence, final boolean endOfBatch) throws Exception
-        {
+        public void onEvent(final ValueEvent event, final long sequence, final boolean endOfBatch) throws Exception {
             final long next = buffer.next();
             buffer.get(next).setValue(event.getValue());
             buffer.publish(next);
         }
 
         @Override
-        public void onStart()
-        {
-            try
-            {
+        public void onStart() {
+            try {
                 barrier.await();
-            }
-            catch (final Exception e)
-            {
+            } catch (final Exception e) {
                 throw new RuntimeException(e);
             }
         }
 
         @Override
-        public void onShutdown()
-        {
+        public void onShutdown() {
         }
 
-        public void reset(final CyclicBarrier barrier)
-        {
+        public void reset(final CyclicBarrier barrier) {
             this.barrier = barrier;
         }
     }
