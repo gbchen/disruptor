@@ -21,25 +21,22 @@ import com.lmax.disruptor.BatchStartAware;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.util.PaddedLong;
 
-public final class LongArrayEventHandler implements EventHandler<long[]>, BatchStartAware
-{
-    private final PaddedLong value = new PaddedLong();
-    private final PaddedLong batchesProcessed = new PaddedLong();
-    private long count;
-    private CountDownLatch latch;
+public final class LongArrayEventHandler implements EventHandler<long[]>, BatchStartAware {
 
-    public long getValue()
-    {
+    private final PaddedLong value            = new PaddedLong();
+    private final PaddedLong batchesProcessed = new PaddedLong();
+    private long             count;
+    private CountDownLatch   latch;
+
+    public long getValue() {
         return value.get();
     }
 
-    public long getBatchesProcessed()
-    {
+    public long getBatchesProcessed() {
         return batchesProcessed.get();
     }
 
-    public void reset(final CountDownLatch latch, final long expectedCount)
-    {
+    public void reset(final CountDownLatch latch, final long expectedCount) {
         value.set(0L);
         this.latch = latch;
         count = expectedCount;
@@ -47,22 +44,18 @@ public final class LongArrayEventHandler implements EventHandler<long[]>, BatchS
     }
 
     @Override
-    public void onEvent(final long[] event, final long sequence, final boolean endOfBatch) throws Exception
-    {
-        for (int i = 0; i < event.length; i++)
-        {
+    public void onEvent(final long[] event, final long sequence, final boolean endOfBatch) throws Exception {
+        for (int i = 0; i < event.length; i++) {
             value.set(value.get() + event[i]);
         }
 
-        if (--count == 0)
-        {
+        if (--count == 0) {
             latch.countDown();
         }
     }
 
     @Override
-    public void onBatchStart(long batchSize)
-    {
+    public void onBatchStart(long batchSize) {
         batchesProcessed.increment();
     }
 }

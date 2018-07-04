@@ -15,7 +15,6 @@
  */
 package com.lmax.disruptor.event.translator;
 
-import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.RingBuffer;
 
 /**

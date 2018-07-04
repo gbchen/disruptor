@@ -19,7 +19,7 @@ import com.lmax.disruptor.event.processor.BatchEventProcessor;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventProcessor;
-import com.lmax.disruptor.EventTranslator;
+import com.lmax.disruptor.event.translator.EventTranslator;
 import com.lmax.disruptor.event.translator.EventTranslatorOneArg;
 import com.lmax.disruptor.event.translator.EventTranslatorThreeArg;
 import com.lmax.disruptor.event.translator.EventTranslatorTwoArg;

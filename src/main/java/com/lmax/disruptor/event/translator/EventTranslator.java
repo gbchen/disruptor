@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor;
+package com.lmax.disruptor.event.translator;
+
+import com.lmax.disruptor.RingBuffer;
 
 /**
  * 事件转换器。实际上就是新事件向旧事件覆盖的接口定义。
@@ -25,8 +27,7 @@ package com.lmax.disruptor;
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
  */
-public interface EventTranslator<T>
-{
+public interface EventTranslator<T> {
     /**
      * Translate a data representation into fields set in given event
      *

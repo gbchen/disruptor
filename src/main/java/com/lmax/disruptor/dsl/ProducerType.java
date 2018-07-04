@@ -16,6 +16,10 @@
 package com.lmax.disruptor.dsl;
 
 /**
+ * 指定序列器的生成模式。默认使用MULTI模式
+ * 如果确认是在单线程环境下产生Event，应该调整为SINGLE模式，可以显著提高性能。因为不用处理并发下sequence的产生
+ * 如果在多线程情况下使用SINGLE模式，将会导致混乱，出现sequence丢失问题
+ *
  * Defines producer types to support creation of RingBuffer with correct sequencer and publisher.
  */
 public enum ProducerType {

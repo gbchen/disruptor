@@ -1,5 +1,6 @@
 package com.lmax.disruptor;
 
+import com.lmax.disruptor.event.translator.EventTranslator;
 import com.lmax.disruptor.event.translator.EventTranslatorOneArg;
 import com.lmax.disruptor.event.translator.EventTranslatorThreeArg;
 import com.lmax.disruptor.event.translator.EventTranslatorTwoArg;
@@ -193,7 +194,7 @@ public interface EventSink<E> {
      * @param <A> Class of the user supplied argument
      * @param translator The user specified translation for the event
      * @param arg0       A user supplied argument.
-     * @see #publishEvents(com.lmax.disruptor.EventTranslator[])
+     * @see #publishEvents(EventTranslator[])
      */
     <A> void publishEvents(EventTranslatorOneArg<E, A> translator, A[] arg0);
 
@@ -217,7 +218,7 @@ public interface EventSink<E> {
      * @param arg0       An array of user supplied arguments, one element per event.
      * @return true if the value was published, false if there was insufficient
      * capacity.
-     * @see #tryPublishEvents(com.lmax.disruptor.EventTranslator[])
+     * @see #tryPublishEvents(EventTranslator[])
      */
     <A> boolean tryPublishEvents(EventTranslatorOneArg<E, A> translator, A[] arg0);
 
@@ -243,7 +244,7 @@ public interface EventSink<E> {
      * @param translator The user specified translation for the event
      * @param arg0       An array of user supplied arguments, one element per event.
      * @param arg1       An array of user supplied arguments, one element per event.
-     * @see #publishEvents(com.lmax.disruptor.EventTranslator[])
+     * @see #publishEvents(EventTranslator[])
      */
     <A, B> void publishEvents(EventTranslatorTwoArg<E, A, B> translator, A[] arg0, B[] arg1);
 
@@ -273,7 +274,7 @@ public interface EventSink<E> {
      * @param arg1       An array of user supplied arguments, one element per event.
      * @return true if the value was published, false if there was insufficient
      * capacity.
-     * @see #tryPublishEvents(com.lmax.disruptor.EventTranslator[])
+     * @see #tryPublishEvents(EventTranslator[])
      */
     <A, B> boolean tryPublishEvents(EventTranslatorTwoArg<E, A, B> translator, A[] arg0, B[] arg1);
 
@@ -305,7 +306,7 @@ public interface EventSink<E> {
      * @param arg0       An array of user supplied arguments, one element per event.
      * @param arg1       An array of user supplied arguments, one element per event.
      * @param arg2       An array of user supplied arguments, one element per event.
-     * @see #publishEvents(com.lmax.disruptor.EventTranslator[])
+     * @see #publishEvents(EventTranslator[])
      */
     <A, B, C> void publishEvents(EventTranslatorThreeArg<E, A, B, C> translator, A[] arg0, B[] arg1, C[] arg2);
 
@@ -339,7 +340,7 @@ public interface EventSink<E> {
      * @param arg2       An array of user supplied arguments, one element per event.
      * @return true if the value was published, false if there was insufficient
      * capacity.
-     * @see #publishEvents(com.lmax.disruptor.EventTranslator[])
+     * @see #publishEvents(EventTranslator[])
      */
     <A, B, C> boolean tryPublishEvents(EventTranslatorThreeArg<E, A, B, C> translator, A[] arg0, B[] arg1, C[] arg2);
 
@@ -368,7 +369,7 @@ public interface EventSink<E> {
      *
      * @param translator The user specified translation for the event
      * @param args       User supplied arguments, one Object[] per event.
-     * @see #publishEvents(com.lmax.disruptor.EventTranslator[])
+     * @see #publishEvents(EventTranslator[])
      */
     void publishEvents(EventTranslatorVararg<E> translator, Object[]... args);
 
@@ -390,7 +391,7 @@ public interface EventSink<E> {
      * @param args       User supplied arguments, one Object[] per event.
      * @return true if the value was published, false if there was insufficient
      * capacity.
-     * @see #publishEvents(com.lmax.disruptor.EventTranslator[])
+     * @see #publishEvents(EventTranslator[])
      */
     boolean tryPublishEvents(EventTranslatorVararg<E> translator, Object[]... args);
 

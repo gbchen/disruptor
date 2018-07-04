@@ -1,7 +1,7 @@
 package com.lmax.disruptor.example;
 
 import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.EventTranslator;
+import com.lmax.disruptor.event.translator.EventTranslator;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.support.LongEvent;
 import com.lmax.disruptor.util.DaemonThreadFactory;
