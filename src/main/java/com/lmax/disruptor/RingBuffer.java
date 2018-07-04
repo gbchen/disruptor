@@ -84,7 +84,7 @@ abstract class RingBufferFields<E> extends RingBufferPad {
             throw new IllegalArgumentException("bufferSize must not be less than 1");
         }
 
-        //bufferSize必须是2的倍数
+        //bufferSize必须是2的指数
         if (Integer.bitCount(bufferSize) != 1) {
             throw new IllegalArgumentException("bufferSize must be a power of 2");
         }
@@ -797,8 +797,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * @param sequence the sequence to publish.
      */
     @Override
-    public void publish(long sequence)
-    {
+    public void publish(long sequence) {
         sequencer.publish(sequence);
     }
 

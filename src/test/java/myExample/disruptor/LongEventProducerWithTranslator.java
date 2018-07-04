@@ -14,12 +14,11 @@ public class LongEventProducerWithTranslator {
     private static final EventTranslatorOneArg<LongEvent, Long> TRANSLATOR = new EventTranslatorOneArg<LongEvent, Long>() {
 
                                                                                public void translateTo(LongEvent event,
-                                                                                                       long sequence,
-                                                                                                       Long l) {
+                                                                                                       long sequence, Long l) {
                                                                                    event.setValue(l);
                                                                                }
                                                                            };
-    private final RingBuffer<LongEvent> ringBuffer;
+    private final RingBuffer<LongEvent>                         ringBuffer;
 
     public LongEventProducerWithTranslator(RingBuffer<LongEvent> ringBuffer) {
         this.ringBuffer = ringBuffer;
