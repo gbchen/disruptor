@@ -1,10 +1,14 @@
-package myExample.disruptor;
+package myExample.disruptor.Main;
 
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.waitstrategy.BlockingWaitStrategy;
 import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
+import myExample.disruptor.LongEvent;
+import myExample.disruptor.LongEventFactory;
+import myExample.disruptor.LongEventHandler;
+import myExample.disruptor.LongEventProducer;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -16,7 +20,7 @@ import java.util.concurrent.ThreadFactory;
  * @author cgb
  * @create 2018-06-18
  **/
-public class Main2_ProducerType {
+public class Main2_ProducerType_WaitStrategy {
 
     public static void main(String[] args) {
         // ExecutorService executor = Executors.newCachedThreadPool();

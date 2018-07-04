@@ -1,13 +1,14 @@
-package myExample.disruptor;
+package myExample.disruptor.extend;
 
 import com.lmax.disruptor.EventHandler;
+import myExample.disruptor.LongEvent;
 
 /**
  * 消费者调用的处理接口
  * @author cgb
  * @create 2018-06-18
  **/
-public class LongEventHandler implements EventHandler<LongEvent> {
+public class LongEventHandlerThrowsException implements EventHandler<LongEvent> {
 
     /**
      * 从RingBuffer中获取到数据之后会调用此方法
@@ -17,7 +18,9 @@ public class LongEventHandler implements EventHandler<LongEvent> {
      * @throws Exception
      */
     public void onEvent(LongEvent longEvent, long sequence, boolean endOfBatch) throws Exception {
-
-        System.out.println("LongEventHandler:" + longEvent.getValue());
+        if (longEvent.getValue() == 5){
+            throw new Exception("异常!!!");
+        }
+        System.out.println(longEvent.getValue());
     }
 }

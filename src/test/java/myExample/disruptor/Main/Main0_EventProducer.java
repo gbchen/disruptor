@@ -1,20 +1,25 @@
-package myExample.disruptor;
+package myExample.disruptor.Main;
 
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
+import myExample.disruptor.LongEvent;
+import myExample.disruptor.LongEventFactory;
+import myExample.disruptor.LongEventHandler;
+import myExample.disruptor.LongEventProducer;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * 简易开发模型
  * @author cgb
  * @create 2018-06-18
  **/
-public class Main3 {
+public class Main0_EventProducer {
 
-    public static Long MAX_OPS = 1000 * 1000L;
+    public static Long MAX_OPS = 1000L;
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         // 初始化线程池
         ExecutorService executor = Executors.newCachedThreadPool();
 
@@ -26,8 +31,6 @@ public class Main3 {
 
         // 初始化RingBuffer
         Disruptor<LongEvent> disruptor = new Disruptor<LongEvent>(factory, bufferSize, executor);
-        // Disruptor<LongEvent> disruptor = new Disruptor<LongEvent>(factory, bufferSize, executor, ProducerType.SINGLE,
-        // new YieldingWaitStrategy());
 
         // 指定事件处理器
         disruptor.handleEventsWith(new LongEventHandler());
@@ -38,17 +41,12 @@ public class Main3 {
         // 获取RingBuffer
         RingBuffer<LongEvent> ringBuffer = disruptor.getRingBuffer();
 
+        //生产者
         LongEventProducer producer = new LongEventProducer(ringBuffer);
-        LongEventProducerWithTranslator longEventProducerWithTranslator = new LongEventProducerWithTranslator(ringBuffer);
 
-        long beginTime = System.currentTimeMillis();
         for (long l = 0; l < MAX_OPS; l++) {
-//            producer.onData(l);
-            longEventProducerWithTranslator.onData(l);
+            producer.onData(l);
         }
 
-        disruptor.shutdown();
-        executor.shutdown();
-        System.out.println(String.format("总共耗时%s毫秒", (System.currentTimeMillis() - beginTime)));
     }
 }

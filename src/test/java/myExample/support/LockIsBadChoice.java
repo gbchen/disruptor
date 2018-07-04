@@ -1,4 +1,4 @@
-package myExample;
+package myExample.support;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

@@ -1,4 +1,4 @@
-package myExample;
+package myExample.support;
 
 public final class FalseSharing implements Runnable {
 
