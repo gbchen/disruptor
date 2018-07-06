@@ -37,19 +37,19 @@ public class Main4_MultiEventHandler {
         EventHandler<LongEvent> eventHandler3 = new LongEventHandler3();
         EventHandler<LongEvent> eventHandler4 = new LongEventHandler4();
 
-        /**
+        /*
          * 串行处理 h1--h2
          */
          disruptor.handleEventsWith(eventHandler1).handleEventsWith(eventHandler2);
 
-        /**
+        /*
          * 并行处理,两种写法 h1 -- h2
          */
 //         disruptor.handleEventsWith(eventHandler1);
 //         disruptor.handleEventsWith(eventHandler2);
 //         disruptor.handleEventsWith(eventHandler2,eventHandler1);
 
-        /**
+        /*
          * h1
          *    --h3--h4
          * h2
@@ -58,7 +58,7 @@ public class Main4_MultiEventHandler {
 //        EventHandlerGroup<LongEvent> group2 = disruptor.handleEventsWith(eventHandler2);
 //        group1.and(group2).handleEventsWith(eventHandler3).handleEventsWith(eventHandler4);
 
-        /**
+        /*
          * h1--h2
          *       --h1
          * h3--h4
@@ -67,14 +67,14 @@ public class Main4_MultiEventHandler {
 //        EventHandlerGroup<LongEvent> group2 = disruptor.handleEventsWith(eventHandler3).handleEventsWith(eventHandler4);
 //        group1.and(group2).handleEventsWith(eventHandler1);
 
-        /**
+        /*
          *      h2
          * h1--    --h4
          *      h3
          */
 //        disruptor.handleEventsWith(eventHandler1).handleEventsWith(eventHandler2,eventHandler3).handleEventsWith(eventHandler4);
 
-        /**
+        /*
          * h1    h3
          *    --
          * h2    h4

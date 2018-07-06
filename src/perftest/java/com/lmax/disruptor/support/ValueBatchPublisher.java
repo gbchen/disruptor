@@ -39,26 +39,20 @@ public final class ValueBatchPublisher implements Runnable
     }
 
     @Override
-    public void run()
-    {
-        try
-        {
+    public void run() {
+        try {
             cyclicBarrier.await();
 
-            for (long i = 0; i < iterations; i += batchSize)
-            {
+            for (long i = 0; i < iterations; i += batchSize) {
                 long hi = ringBuffer.next(batchSize);
                 long lo = hi - (batchSize - 1);
-                for (long l = lo; l <= hi; l++)
-                {
+                for (long l = lo; l <= hi; l++) {
                     ValueEvent event = ringBuffer.get(l);
                     event.setValue(l);
                 }
                 ringBuffer.publish(lo, hi);
             }
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
     }
