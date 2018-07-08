@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author cgb
  * @create 2018-06-14
  **/
-public class LockIsBadChoice_MultiThread {
+public class LockIsBadChoice_2_MultiThread {
 
     public static final int ThreadCount = 2;
     public static final int BarrierNum = ThreadCount + 1;
@@ -112,16 +112,20 @@ class Counter {
     private Long       lockLong   = 0L;
     private AtomicLong atomicLong = new AtomicLong(0);
 
-    private Lock lock = new ReentrantLock();
+    private ReentrantLock lock = new ReentrantLock();
 
     /**
      * 有锁
      * 用内置锁在单线程情况下JVM会进行优化，导致结果和预期不符
      */
     public void increaseNumWithLock() {
-        lock.lock();
-        this.lockLong++;
-        lock.unlock();
+        final ReentrantLock lock = this.lock;
+        try {
+            lock.lock();
+            this.lockLong++;
+        }finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -134,10 +138,13 @@ class Counter {
 
 
     public Long getLockLong() {
-        lock.lock();
-        long result = lockLong;
-        lock.unlock();
-        return result;
+        final ReentrantLock lock = this.lock;
+        try {
+            lock.lock();
+            return lockLong;
+        }finally {
+            lock.unlock();
+        }
     }
 
     public AtomicLong getAtomicLong() {

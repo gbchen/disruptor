@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author cgb
  * @create 2018-06-14
  **/
-public class LockIsBadChoice_SingleThread {
+public class LockIsBadChoice_1_SingleThread {
 
     public static final Long MAX_NUM    = 1000 * 1000 * 100L;
     public static final int  BarrierNum = 2;
