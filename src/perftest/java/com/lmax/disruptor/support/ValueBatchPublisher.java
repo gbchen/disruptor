@@ -19,19 +19,15 @@ import java.util.concurrent.CyclicBarrier;
 
 import com.lmax.disruptor.RingBuffer;
 
-public final class ValueBatchPublisher implements Runnable
-{
-    private final CyclicBarrier cyclicBarrier;
-    private final RingBuffer<ValueEvent> ringBuffer;
-    private final long iterations;
-    private final int batchSize;
+public final class ValueBatchPublisher implements Runnable {
 
-    public ValueBatchPublisher(
-        final CyclicBarrier cyclicBarrier,
-        final RingBuffer<ValueEvent> ringBuffer,
-        final long iterations,
-        final int batchSize)
-    {
+    private final CyclicBarrier          cyclicBarrier;
+    private final RingBuffer<ValueEvent> ringBuffer;
+    private final long                   iterations;
+    private final int                    batchSize;
+
+    public ValueBatchPublisher(final CyclicBarrier cyclicBarrier, final RingBuffer<ValueEvent> ringBuffer, final long iterations,
+                               final int batchSize) {
         this.cyclicBarrier = cyclicBarrier;
         this.ringBuffer = ringBuffer;
         this.iterations = iterations;

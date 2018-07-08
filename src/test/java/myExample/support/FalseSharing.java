@@ -3,7 +3,7 @@ package myExample.support;
 public final class FalseSharing implements Runnable {
 
     public final static int       NUM_THREADS = 4;                            // change
-    public final static long      ITERATIONS  = 500L * 1000L * 1000L;
+    public final static long      ITERATIONS  = 1000L * 1000L * 100L;
     private final int             arrayIndex;
 
     private static VolatileLong[] longs       = new VolatileLong[NUM_THREADS];
@@ -18,9 +18,9 @@ public final class FalseSharing implements Runnable {
     }
 
     public static void main(final String[] args) throws Exception {
-        final long start = System.nanoTime();
+        final long start = System.currentTimeMillis();
         runTest();
-        System.out.println("duration = " + (System.nanoTime() - start));
+        System.out.println("duration = " + (System.currentTimeMillis() - start));
     }
 
     private static void runTest() throws InterruptedException {
@@ -53,5 +53,3 @@ public final class FalseSharing implements Runnable {
         public long          p1, p2, p3, p4, p5, p6; // comment out
     }
 }
-// duration = 4731966043
-// duration = 33715429657

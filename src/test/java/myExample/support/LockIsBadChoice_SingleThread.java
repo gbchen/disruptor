@@ -19,7 +19,7 @@ public class LockIsBadChoice_SingleThread {
 
     public static void main(String[] args) throws BrokenBarrierException, InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
-        final Counter counter = new Counter();
+        final Counter1 counter = new Counter1();
         final CyclicBarrier cyclicBarrier = new CyclicBarrier(BarrierNum);
 
         // 无锁
@@ -83,5 +83,53 @@ public class LockIsBadChoice_SingleThread {
         cyclicBarrier.await();
 
         executorService.shutdown();
+    }
+}
+
+class Counter1 {
+
+    private Long       noLockLong = 0L;
+    private Long       lockLong   = 0L;
+    private AtomicLong atomicLong = new AtomicLong(0);
+
+    private Lock lock = new ReentrantLock();
+
+    /**
+     * 有锁
+     * 用内置锁在单线程情况下JVM会进行优化，导致结果和预期不符
+     */
+    public void increaseNumWithLock() {
+        lock.lock();
+        this.lockLong++;
+        lock.unlock();
+    }
+
+    /**
+     * 原子
+     */
+    public void increaseAtomicLongNum() {
+        atomicLong.incrementAndGet();
+    }
+
+    /**
+     * 无锁
+     */
+    public void increaseNumWithNoLock() {
+        this.noLockLong++;
+    }
+
+
+
+
+    public Long getNoLockLong() {
+        return noLockLong;
+    }
+
+    public Long getLockLong() {
+        return lockLong;
+    }
+
+    public AtomicLong getAtomicLong() {
+        return atomicLong;
     }
 }
