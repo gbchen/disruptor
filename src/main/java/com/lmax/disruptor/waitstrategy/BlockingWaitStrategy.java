@@ -23,6 +23,8 @@ import com.lmax.disruptor.exception.AlertException;
 import com.lmax.disruptor.util.ThreadHints;
 
 /**
+ * 如果实际可消费的索引号小于消费者期望消费的所以号，消费者就进入等待状态。后续生产者通过 publish 方法将消费者唤醒。
+ *
  * Blocking strategy that uses a lock and condition variable for {@link EventProcessor}s waiting on a barrier.
  * <p>
  * This strategy can be used when throughput and low-latency are not as important as CPU resource.
@@ -35,6 +37,7 @@ public final class BlockingWaitStrategy implements WaitStrategy {
     public long waitFor(long sequence, Sequence cursorSequence, Sequence dependentSequence,
                         SequenceBarrier barrier) throws AlertException, InterruptedException {
         long availableSequence;
+        // cursorSequence 就是生产者的 current，sequence 是消费者期望的消费索引号
         if (cursorSequence.get() < sequence) {
             synchronized (mutex) {
                 while (cursorSequence.get() < sequence) {

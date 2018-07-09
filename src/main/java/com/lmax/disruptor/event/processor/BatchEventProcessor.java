@@ -144,6 +144,7 @@ public final class BatchEventProcessor<T> implements EventProcessor {
 
     private void processEvents() {
         T event = null;
+        // nextSequence：消费者期望处理的下一个数据的序号
         long nextSequence = sequence.get() + 1L;
 
         while (true) {
@@ -159,6 +160,7 @@ public final class BatchEventProcessor<T> implements EventProcessor {
                     nextSequence++;
                 }
 
+                //消费者消费完后，这条语句，就是重设自己的 sequence，是为了让生产者能及时看到，以便生产者确定可写入数组元素的索引。
                 sequence.set(availableSequence);
             } catch (final TimeoutException e) {
                 notifyTimeout(sequence.get());

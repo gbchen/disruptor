@@ -232,13 +232,11 @@ public final class MultiProducerSequencer extends AbstractSequencer {
      * buffer), when we have new data and successfully claimed a slot we can simply
      * write over the top.
      */
-    private void setAvailable(final long sequence)
-    {
+    private void setAvailable(final long sequence) {
         setAvailableBufferValue(calculateIndex(sequence), calculateAvailabilityFlag(sequence));
     }
 
-    private void setAvailableBufferValue(int index, int flag)
-    {
+    private void setAvailableBufferValue(int index, int flag) {
         long bufferAddress = (index * SCALE) + BASE;
         UNSAFE.putOrderedInt(availableBuffer, bufferAddress, flag);
     }
@@ -247,8 +245,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
      * @see Sequencer#isAvailable(long)
      */
     @Override
-    public boolean isAvailable(long sequence)
-    {
+    public boolean isAvailable(long sequence) {
         int index = calculateIndex(sequence);
         int flag = calculateAvailabilityFlag(sequence);
         long bufferAddress = (index * SCALE) + BASE;
@@ -256,12 +253,9 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     @Override
-    public long getHighestPublishedSequence(long lowerBound, long availableSequence)
-    {
-        for (long sequence = lowerBound; sequence <= availableSequence; sequence++)
-        {
-            if (!isAvailable(sequence))
-            {
+    public long getHighestPublishedSequence(long lowerBound, long availableSequence) {
+        for (long sequence = lowerBound; sequence <= availableSequence; sequence++) {
+            if (!isAvailable(sequence)) {
                 return sequence - 1;
             }
         }
@@ -269,13 +263,11 @@ public final class MultiProducerSequencer extends AbstractSequencer {
         return availableSequence;
     }
 
-    private int calculateAvailabilityFlag(final long sequence)
-    {
+    private int calculateAvailabilityFlag(final long sequence) {
         return (int) (sequence >>> indexShift);
     }
 
-    private int calculateIndex(final long sequence)
-    {
+    private int calculateIndex(final long sequence) {
         return ((int) sequence) & indexMask;
     }
 }

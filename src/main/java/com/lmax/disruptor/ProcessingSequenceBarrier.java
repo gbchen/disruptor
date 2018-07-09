@@ -43,16 +43,23 @@ final class ProcessingSequenceBarrier implements SequenceBarrier {
         }
     }
 
+    /**
+     * waitFor方法第一个参数是消费者期望消费的索引序列号，
+     * cursorSequence是生产者的current，
+     * 返回值availableSequence是实际可消费的索引号，这个值返回后，生产者还要做检查，就是通过最下面的 getHighestPublishedSequence方法：
+     */
     @Override
     public long waitFor(final long sequence) throws AlertException, InterruptedException, TimeoutException {
         checkAlert();
 
+        //waitStrategy 的默认实现是 BlockingWaitStrategy
         long availableSequence = waitStrategy.waitFor(sequence, cursorSequence, dependentSequence, this);
 
         if (availableSequence < sequence) {
             return availableSequence;
         }
 
+        //检查生产者的位置信息的标志是否正常.这个是和生产者的publish方法联系起来的.
         return sequencer.getHighestPublishedSequence(sequence, availableSequence);
     }
 
