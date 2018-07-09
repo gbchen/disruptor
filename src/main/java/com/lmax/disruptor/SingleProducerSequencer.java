@@ -78,7 +78,7 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
     }
 
     private boolean hasAvailableCapacity(int requiredCapacity, boolean doStore) {
-        //上次请求成功的seq
+        //上次请求成功的seq，该生产者发布的最大序号
         long nextValue = this.nextValue;
 
         //覆盖点：请求的个数+当前位置，超过一圈时，减去bufferSize = 需要覆盖的上一圈位置
@@ -139,12 +139,11 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
         long wrapPoint = nextSequence - bufferSize;
 
         //cachedValue记录消费者线程中序列号最小的序列号，即是在最后面的消费者的序号
-        //TODO 所有消费者中消费得最慢那个的前一个序列号??
         long cachedGatingSequence = this.cachedValue;
 
         //这里两个判断条件：
         // 一是看生产者生产是不是超过了消费者，所以判断的是覆盖点是否超过了最慢消费者；
-        // 二是看消费者是否超过了当前生产者的最大序号，判断的是消费者是不是比生产者还快这种异常情况
+        // 二是看消费者是否超过了当前生产者的最大序号，判断的是消费者是不是比生产者还快这种异常情况 ？？
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue) {
             cursor.setVolatile(nextValue); // StoreLoad fence
 
