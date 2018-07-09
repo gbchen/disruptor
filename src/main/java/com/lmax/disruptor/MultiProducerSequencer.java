@@ -34,15 +34,23 @@ import com.lmax.disruptor.util.Util;
 public final class MultiProducerSequencer extends AbstractSequencer {
 
     private static final Unsafe UNSAFE              = Util.getUnsafe();
+    /** 数组第一个元素的偏移量（内存位置） */
     private static final long   BASE                = UNSAFE.arrayBaseOffset(int[].class);
+    /** 数组每个元素大小 */
     private static final long   SCALE               = UNSAFE.arrayIndexScale(int[].class);
 
+    /**
+     * 最慢消费者seq缓存，不是每次都计算,只有覆盖点>最慢消费者seq时，再次请求计算最新的最慢消费者seq
+     */
     private final Sequence      gatingSequenceCache = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
 
     // availableBuffer tracks the state of each ringbuffer slot
     // see below for more details on the approach
     private final int[]         availableBuffer;
+
+    /**bufferSize-1,用于取模求圈数 */
     private final int           indexMask;
+    /**8->3,为了后面>>>运算，m>>>n = m除以2的n次方 */
     private final int           indexShift;
 
     /**
@@ -68,13 +76,18 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     private boolean hasAvailableCapacity(Sequence[] gatingSequences, final int requiredCapacity, long cursorValue) {
+        //覆盖点
         long wrapPoint = (cursorValue + requiredCapacity) - bufferSize;
+        //最慢消费者的消费到的seq
         long cachedGatingSequence = gatingSequenceCache.get();
 
+        //覆盖点过了最慢消费者的seq，或者cursorValue=Long.maxValue+1位负数，最慢消费者的seq大于cursorValue（不知是否理解有误）
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > cursorValue) {
+            //重新计算获得最慢消费者的seq
             long minSequence = Util.getMinimumSequence(gatingSequences, cursorValue);
             gatingSequenceCache.set(minSequence);
 
+            //如果仍然覆盖，则返回false
             if (wrapPoint > minSequence) {
                 return false;
             }
@@ -92,6 +105,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
+     * 阻塞获取可生产填充的下一seq
      * @see Sequencer#next()
      */
     @Override
@@ -100,6 +114,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
+     * 阻塞获取可生产填充的下seq
      * @see Sequencer#next(int)
      */
     @Override
@@ -144,6 +159,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
+     * //不阻塞，获取失败，抛异常
      * @see Sequencer#tryNext()
      */
     @Override
@@ -152,6 +168,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
+     * //不阻塞，获取失败，抛异常
      * @see Sequencer#tryNext(int)
      */
     @Override
@@ -185,6 +202,9 @@ public final class MultiProducerSequencer extends AbstractSequencer {
         return getBufferSize() - (produced - consumed);
     }
 
+    /**
+     * 初始化int[]值为-1，代表圈数
+     */
     private void initialiseAvailableBuffer() {
         for (int i = availableBuffer.length - 1; i != 0; i--) {
             setAvailableBufferValue(i, -1);
@@ -198,6 +218,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
      */
     @Override
     public void publish(final long sequence) {
+        //记录seq所在槽的圈数
         setAvailable(sequence);
         waitStrategy.signalAllWhenBlocking();
     }
@@ -236,12 +257,21 @@ public final class MultiProducerSequencer extends AbstractSequencer {
         setAvailableBufferValue(calculateIndex(sequence), calculateAvailabilityFlag(sequence));
     }
 
+    /**
+     * //按内存地址位置指定int[]元素的值，值为圈数
+     *     index：槽位，flag：圈数
+     * @param index
+     * @param flag
+     */
     private void setAvailableBufferValue(int index, int flag) {
+        //计算槽位对应的内存地址
         long bufferAddress = (index * SCALE) + BASE;
+        //设置availableBuffer中偏移量（内存地址）为bufferAddress的值
         UNSAFE.putOrderedInt(availableBuffer, bufferAddress, flag);
     }
 
     /**
+     *  //是否可用：seq计算出的圈数是否已被设置到availableBuffer
      * @see Sequencer#isAvailable(long)
      */
     @Override
@@ -252,6 +282,9 @@ public final class MultiProducerSequencer extends AbstractSequencer {
         return UNSAFE.getIntVolatile(availableBuffer, bufferAddress) == flag;
     }
 
+    /**
+     *  //lowerBound 到 availableSequence之间 最大可用seq
+     */
     @Override
     public long getHighestPublishedSequence(long lowerBound, long availableSequence) {
         for (long sequence = lowerBound; sequence <= availableSequence; sequence++) {
@@ -264,10 +297,12 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     private int calculateAvailabilityFlag(final long sequence) {
+        //圈数
         return (int) (sequence >>> indexShift);
     }
 
     private int calculateIndex(final long sequence) {
+        //槽位
         return ((int) sequence) & indexMask;
     }
 }

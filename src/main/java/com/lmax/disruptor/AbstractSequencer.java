@@ -27,12 +27,30 @@ import com.lmax.disruptor.util.Util;
  * ownership(所有权) of the current cursor.
  */
 public abstract class AbstractSequencer implements Sequencer {
+    /**
+     * 原子更新需要跟踪的消费者seq,gatingSequences
+     */
     private static final AtomicReferenceFieldUpdater<AbstractSequencer, Sequence[]> SEQUENCE_UPDATER =
         AtomicReferenceFieldUpdater.newUpdater(AbstractSequencer.class, Sequence[].class, "gatingSequences");
 
+    /**
+     * ringBuffer大小
+     */
     protected final int bufferSize;
+
+    /**
+     * 等待策略
+     */
     protected final WaitStrategy waitStrategy;
+
+    /**
+     * 生产者生产到的位置
+     */
     protected final Sequence cursor = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+
+    /**
+     * 需跟踪的消费者组消费到的seqs
+     */
     protected volatile Sequence[] gatingSequences = new Sequence[0];
 
     /**
@@ -70,6 +88,7 @@ public abstract class AbstractSequencer implements Sequencer {
     }
 
     /**
+     * 原子添加需跟踪的前置消费者seq到数组
      * @see Sequencer#addGatingSequences(Sequence...)
      */
     @Override
@@ -78,6 +97,7 @@ public abstract class AbstractSequencer implements Sequencer {
     }
 
     /**
+     * 原子删除需跟踪的前置消费者seq
      * @see Sequencer#removeGatingSequence(Sequence)
      */
     @Override
@@ -86,6 +106,7 @@ public abstract class AbstractSequencer implements Sequencer {
     }
 
     /**
+     * 获得前置消费者中消费最慢的seq
      * @see Sequencer#getMinimumSequence()
      */
     @Override
@@ -94,6 +115,7 @@ public abstract class AbstractSequencer implements Sequencer {
     }
 
     /**
+     * 生成消费者屏障，指定前置消费者seq
      * @see Sequencer#newBarrier(Sequence...)
      */
     @Override
@@ -102,6 +124,7 @@ public abstract class AbstractSequencer implements Sequencer {
     }
 
     /**
+     * 不建议使用
      * Creates an event poller for this sequence that will use the supplied data provider and gating sequences.
      *
      * @param dataProvider The data source for users of this event poller

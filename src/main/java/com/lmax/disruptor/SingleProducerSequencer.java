@@ -78,16 +78,22 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
     }
 
     private boolean hasAvailableCapacity(int requiredCapacity, boolean doStore) {
+        //上次请求成功的seq
         long nextValue = this.nextValue;
 
+        //覆盖点：请求的个数+当前位置，超过一圈时，减去bufferSize = 需要覆盖的上一圈位置
         long wrapPoint = (nextValue + requiredCapacity) - bufferSize;
+        //上次请求时，缓存记录的最慢消费者seq，只有在覆盖点要覆盖他时，才再次计算，计算完后，再次判断是否覆盖
         long cachedGatingSequence = this.cachedValue;
 
+        //覆盖了消费者未消费的位置
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue) {
+            //是否要写事件
             if (doStore) {
                 cursor.setVolatile(nextValue); // StoreLoad fence
             }
 
+            //获得最慢消费者的seq
             long minSequence = Util.getMinimumSequence(gatingSequences, nextValue);
             this.cachedValue = minSequence;
 
