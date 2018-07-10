@@ -38,7 +38,7 @@ public final class BlockingWaitStrategy implements WaitStrategy {
     public long waitFor(long sequence, Sequence cursorSequence, Sequence dependentSequence,
                         SequenceBarrier barrier) throws AlertException, InterruptedException {
         long availableSequence;
-        // cursorSequence 就是生产者的 current，sequence 是消费者期望的消费索引号
+        // cursorSequence 就是生产者的写指针，sequence 是消费者期望的消费索引号，相当于读指针
         if (cursorSequence.get() < sequence) {
             synchronized (mutex) {
                 while (cursorSequence.get() < sequence) {
@@ -49,8 +49,8 @@ public final class BlockingWaitStrategy implements WaitStrategy {
             }
         }
 
-        //当请求的seq<=生产者seq，检查是否请求的seq>前置消费者消费到的seq,是的话自旋（并循环检查是否有其他线程已唤醒消费者，
-        //是的话则抛异常,等同于是否已解除屏障，这块不知道理解对否）
+        // 当消费者之间没有依赖关系的时候，dependentSequence 就是 cursorSequence
+        // 存在依赖关系的时候，dependentSequence 里存放的是一组依赖的 Sequence，get 方法得到的是消费最慢的依赖的位置
         while ((availableSequence = dependentSequence.get()) < sequence) {
             barrier.checkAlert();
             ThreadHints.onSpinWait();

@@ -516,16 +516,19 @@ public class Disruptor<T> {
         return false;
     }
 
-    //1、创建BatchEventProcessor
-    //2、更新gatingSequence：取消跟踪barrierSequences，添加跟踪每个BatchEventProcessor(eventHandler).getSequence
-    //3、new EventHandlerGroup(consumerRepository.add(batchEventProcessor),Processor.getSequence())
+    /**
+     * 1、创建BatchEventProcessor
+     * 2、更新gatingSequence：取消跟踪barrierSequences，添加跟踪每个BatchEventProcessor(eventHandler).getSequence
+     * 3、new EventHandlerGroup(consumerRepository.add(batchEventProcessor),Processor.getSequence())
+     */
     EventHandlerGroup<T> createEventProcessors(final Sequence[] barrierSequences, final EventHandler<? super T>[] eventHandlers) {
         checkNotStarted();
-
+        // Sequence 保存消费者最近读过的数据位置，读过则表示此位置可被生产者写入
         final Sequence[] processorSequences = new Sequence[eventHandlers.length];
-        //一组handler共用一个序列屏障
+        // 消费者从 SequenceBarrier 获取下一个可消费数据，多组消费者使用同一个 SequenceBarrier
         final SequenceBarrier barrier = ringBuffer.newBarrier(barrierSequences);
 
+        // 这里多个 eventHandler 表示多组消费者，同一份数据会交给所有 eventHandler 处理
         for (int i = 0, eventHandlersLength = eventHandlers.length; i < eventHandlersLength; i++) {
             final EventHandler<? super T> eventHandler = eventHandlers[i];
 
@@ -546,7 +549,7 @@ public class Disruptor<T> {
         return new EventHandlerGroup<>(this, consumerRepository, processorSequences);
     }
 
-    //只需保证最慢的消费者seq不被生产者覆盖，前置消费者的seq不需要监听
+    /**只需保证最慢的消费者seq不被生产者覆盖，前置消费者的seq不需要监听 */
     private void updateGatingSequencesForNextInChain(final Sequence[] barrierSequences, final Sequence[] processorSequences) {
         if (processorSequences.length > 0) {
             //seq晚于barrierSequences，只需保证最慢的消费者seq不被生产者覆盖

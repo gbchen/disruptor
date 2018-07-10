@@ -114,6 +114,9 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
     }
 
     /**
+     * MultiProducerSequencer 使用 CAS 操作来更新写指针位置，这是和 SingleProducerSequencer 的主要区别，
+     * 单生产者模式由于没有写竞争，所以是直接设置的。
+     * 之所以要特意区分单生产者和多生产者是因为，CAS 操作毕竟还是要损耗一些性能的，在没有竞争的情况下，直接赋值效率更高。
      * @see Sequencer#next(int)
      */
     @Override
@@ -122,26 +125,25 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
             throw new IllegalArgumentException("n must be > 0");
         }
 
-        //该生产者发布的最大序列号
+        // 该生产者发布的最大序列号
         long nextValue = this.nextValue;
 
-        //记录下一个要生产的序号，欲发布的序列号
+        // 记录下一个要生产的序号，欲发布的序列号
         long nextSequence = nextValue + n;
 
-        //覆盖点，即该生产者如果发布了这次的序列号，那它最终会落在哪个位置
-        //得到下一个要生产的序号对应的位置
-        //wrapPoint是一个很关键的变量，这个变量决定生产者是否可以覆盖序列号nextSequence，
-        //wrapPoint为什么是nextSequence - bufferSize：
+        // 覆盖点，即该生产者如果发布了这次的序列号，那它最终会落在哪个位置，得到下一个要生产的序号对应的位置
+        // wrapPoint是一个很关键的变量，这个变量决定生产者是否可以覆盖序列号nextSequence，
+        // wrapPoint为什么是nextSequence - bufferSize：
         // RingBuffer表现出来的是一个环形的数据结构，实际上是一个长度为bufferSize的数组，
         // 如果nextSequence小于bufferSize,wrapPoint是负数，表示可以一直生产(就是刚开始的情况，队列为空的，从未放过数据)。
         // 如果nextSequence大于bufferSize,wrapPoint是一个大于0的数，由于生产者和消费者的序列号差距不能超过bufferSize（超过bufferSize会覆盖消费者未消费的数据），
         // wrapPoint要小于等于多个消费者线程中消费的最小的序列号，即cachedValue的值,这就是下面if判断的根据
         long wrapPoint = nextSequence - bufferSize;
 
-        //cachedValue记录消费者线程中序列号最小的序列号，即是在最后面的消费者的序号
+        // cachedValue记录消费者线程中序列号最小的序列号，即是在最后面的消费者的序号
         long cachedGatingSequence = this.cachedValue;
 
-        //这里两个判断条件：
+        // 这里两个判断条件：
         // 一是看生产者生产是不是超过了消费者，所以判断的是覆盖点是否超过了最慢消费者；
         // 二是看消费者是否超过了当前生产者的最大序号，判断的是消费者是不是比生产者还快这种异常情况 ？？
         if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue) {
@@ -149,20 +151,17 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
 
             long minSequence;
 
-            //判断覆盖点wrapPoint是否大于消费者线程最小的序列号，如果大于，不能写入，继续等待
-            //覆盖点是不是已经超过了最慢消费者和当前生产者序列号的最小者
-            //这两个有点难理解，实际上就是覆盖点不能超过最慢那个生产者，也不能超过当前自身，
-            //比如一次发布超过bufferSize），gatingSequences的处理也是类似算术处理，也可以看成是相对于原点是正还是负
+            // 判断覆盖点wrapPoint是否已经超过了最慢消费者和当前生产者序列号的最小者，如果超过了，则申请失败，继续等待
+            // 这两个有点难理解，实际上就是覆盖点不能超过最慢那个生产者，也不能超过当前自身，比如一次发布超过bufferSize），gatingSequences的处理也是类似算术处理
             while (wrapPoint > (minSequence = Util.getMinimumSequence(gatingSequences, nextValue))) {
                 LockSupport.parkNanos(1L); // TODO: Use waitStrategy to spin?
             }
 
-            //满足生产条件了，缓存这次消费者线程最小消费序号，供下次使用
+            // 满足生产条件了，缓存这次消费者线程最小消费序号，供下次使用
             this.cachedValue = minSequence;
         }
 
-        //缓存生产者最大生产序列号
-        //把当前序列号更新为欲发布序列号
+        // 缓存生产者最大生产序列号,把当前序列号更新为欲发布序列号
         this.nextValue = nextSequence;
 
         return nextSequence;

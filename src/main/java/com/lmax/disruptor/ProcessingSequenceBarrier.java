@@ -99,6 +99,7 @@ final class ProcessingSequenceBarrier implements SequenceBarrier {
         alerted = false;
     }
 
+    ////循环检查是否有其他线程已唤醒消费者,是的话则抛异常,等同于是否已解除屏障
     @Override
     public void checkAlert() throws AlertException {
         if (alerted) {

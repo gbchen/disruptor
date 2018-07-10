@@ -54,6 +54,7 @@ abstract class RingBufferFields<E> extends RingBufferPad {
 
     static {
         // 获取用户给定数组寻址的换算因子，也就是数组中每个元素引用所占字节数目
+        // 也就是RingBuffe环中每个元素的大小（其实是引用占用的大小，因为都是对象）
         final int scale = UNSAFE.arrayIndexScale(Object[].class);
         if (4 == scale) {
             REF_ELEMENT_SHIFT = 2;
@@ -85,19 +86,21 @@ abstract class RingBufferFields<E> extends RingBufferPad {
             throw new IllegalArgumentException("bufferSize must not be less than 1");
         }
 
-        //bufferSize必须是2的指数
+        // bufferSize必须是2的指数
+        // Integer.bitCount:计算一个数值在二进制下“1”的数量。
         if (Integer.bitCount(bufferSize) != 1) {
             throw new IllegalArgumentException("bufferSize must be a power of 2");
         }
 
         this.indexMask = bufferSize - 1;
-        //数组大小，为BufferSize + 2*BufferPad
+        //数组大小，为BufferSize + 2*BufferPad,数组的前后各占用了128字节的空间,防止伪共享
         this.entries = new Object[sequencer.getBufferSize() + 2 * BUFFER_PAD];
         fill(eventFactory);
     }
 
     /**
      * 预初始化，填充数组指向的对象
+     * 只对数组中间的 bufferSize 个元素进行初始化,其他数据都是缓存行填充
      */
     private void fill(EventFactory<E> eventFactory) {
         for (int i = 0; i < bufferSize; i++) {
@@ -128,7 +131,9 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * Construct a RingBuffer with the full option set.
      *
      * @param eventFactory to newInstance entries for filling the RingBuffer
+     *                     RingBuffer 中存储的元素的初始化工厂类。
      * @param sequencer    sequencer to handle the ordering of events moving through the RingBuffer.
+     *                     生产者用于访问缓存的控制器，它持有消费者序号的引用；新事件发布后通过 WaitStrategy 通知正在等待的SequenceBarrier。
      * @throws IllegalArgumentException if bufferSize is less than 1 or not a power of 2
      */
     RingBuffer(EventFactory<E> eventFactory, Sequencer sequencer) {

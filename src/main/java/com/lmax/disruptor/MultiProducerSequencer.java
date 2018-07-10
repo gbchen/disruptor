@@ -115,6 +115,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
 
     /**
      * 阻塞获取可生产填充的下seq
+     * 允许一次获取多个写节点
      * @see Sequencer#next(int)
      */
     @Override
@@ -123,17 +124,17 @@ public final class MultiProducerSequencer extends AbstractSequencer {
             throw new IllegalArgumentException("n must be > 0");
         }
 
-        //生产者当前写入到的序列号
         long current;
-        //下一个序列号
         long next;
 
         do {
+            //生产者当前写入到的序列号
             current = cursor.get();
+            //下一个序列号
             next = current + n;
 
             long wrapPoint = next - bufferSize;
-            //cachedGatingSequence, gatingSequenceCache这两个变量记录着上一次获取消费者中最小的消费序列号
+            //cachedGatingSequence, gatingSequenceCache这两个变量记录着上一次获取消费者中最小的消费序列号,也就是最慢的消费者消费的位置
             long cachedGatingSequence = gatingSequenceCache.get();
 
             if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current) {

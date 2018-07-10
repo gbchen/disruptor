@@ -35,6 +35,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
+ * 真正负责轮询处理数据的是 BatchEventProcessor 类，大致步骤如下：
+ *
+ *  1. 获取可读数据序号。
+ *  2. 挨个处理数据。
+ *  3. 更新已读数据位置。
+ *
  * Convenience class for handling the batching semantics of consuming entries from a {@link RingBuffer}
  * and delegating the available events to an {@link EventHandler}.
  * <p>
@@ -50,13 +56,13 @@ public final class BatchEventProcessor<T> implements EventProcessor {
     private static final int              RUNNING          = HALTED + 1;
 
     private final AtomicInteger           running          = new AtomicInteger(IDLE);
-    private ExceptionHandler<? super T> exceptionHandler = new FatalExceptionHandler();
-    private final DataProvider<T> dataProvider;
-    private final SequenceBarrier sequenceBarrier;
+    private ExceptionHandler<? super T>   exceptionHandler = new FatalExceptionHandler();
+    private final DataProvider<T>         dataProvider;
+    private final SequenceBarrier         sequenceBarrier;
     private final EventHandler<? super T> eventHandler;
-    private final Sequence sequence         = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    private final TimeoutHandler timeoutHandler;
-    private final BatchStartAware batchStartAware;
+    private final Sequence                sequence         = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    private final TimeoutHandler          timeoutHandler;
+    private final BatchStartAware         batchStartAware;
 
     /**
      * Construct a {@link EventProcessor} that will automatically track the progress by updating its sequence when
@@ -149,18 +155,21 @@ public final class BatchEventProcessor<T> implements EventProcessor {
 
         while (true) {
             try {
+                // 获取下一批可读的数据
                 final long availableSequence = sequenceBarrier.waitFor(nextSequence);
                 if (batchStartAware != null) {
                     batchStartAware.onBatchStart(availableSequence - nextSequence + 1);
                 }
 
+                // 挨个处理
                 while (nextSequence <= availableSequence) {
                     event = dataProvider.get(nextSequence);
+                    //根据用户实现的 eventHandler 处理数据
                     eventHandler.onEvent(event, nextSequence, nextSequence == availableSequence);
                     nextSequence++;
                 }
 
-                //消费者消费完后，这条语句，就是重设自己的 sequence，是为了让生产者能及时看到，以便生产者确定可写入数组元素的索引。
+                //消费者消费完后，这条语句就是重设自己的sequence，是为了让生产者能及时看到，以便生产者确定可写入数组元素的索引。
                 sequence.set(availableSequence);
             } catch (final TimeoutException e) {
                 notifyTimeout(sequence.get());
