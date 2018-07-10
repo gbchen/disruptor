@@ -33,6 +33,7 @@ public final class BlockingWaitStrategy implements WaitStrategy {
 
     private final Object mutex = new Object();
 
+    // 等待最大可用序列号
     @Override
     public long waitFor(long sequence, Sequence cursorSequence, Sequence dependentSequence,
                         SequenceBarrier barrier) throws AlertException, InterruptedException {
@@ -41,12 +42,15 @@ public final class BlockingWaitStrategy implements WaitStrategy {
         if (cursorSequence.get() < sequence) {
             synchronized (mutex) {
                 while (cursorSequence.get() < sequence) {
+                    //循环检查是否 请求的seq > 生产者seq，是的话检查是否已解除屏障，是则抛异常，终止循环，否则等待。
                     barrier.checkAlert();
                     mutex.wait();
                 }
             }
         }
 
+        //当请求的seq<=生产者seq，检查是否请求的seq>前置消费者消费到的seq,是的话自旋（并循环检查是否有其他线程已唤醒消费者，
+        //是的话则抛异常,等同于是否已解除屏障，这块不知道理解对否）
         while ((availableSequence = dependentSequence.get()) < sequence) {
             barrier.checkAlert();
             ThreadHints.onSpinWait();
@@ -55,6 +59,7 @@ public final class BlockingWaitStrategy implements WaitStrategy {
         return availableSequence;
     }
 
+    //通知所有等待的消费者
     @Override
     public void signalAllWhenBlocking() {
         synchronized (mutex) {

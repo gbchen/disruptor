@@ -140,6 +140,8 @@ public class Disruptor<T> {
     }
 
     /**
+     * 添加消费者，前置消费者默认为空=生产者cursor
+     *
      * <p>Set up event handlers to handle events from the ring buffer. These handlers will process events
      * as soon as they become available, in parallel.</p>
      *
@@ -167,6 +169,8 @@ public class Disruptor<T> {
      */
 
     /**
+     * 添加消费者，前置消费者默认为空=生产者cursor
+     *
      * <p>Set up custom event processors to handle events from the ring buffer. The Disruptor will
      * automatically start these processors when {@link #start()} is called.</p>
      *
@@ -191,6 +195,8 @@ public class Disruptor<T> {
     }
 
     /**
+     * 添加消费者，前置消费者默认为空=生产者cursor
+     *
      * <p>Set up custom event processors to handle events from the ring buffer. The Disruptor will
      * automatically start this processors when {@link #start()} is called.</p>
      *
@@ -218,6 +224,8 @@ public class Disruptor<T> {
 
 
     /**
+     * 创建多线程消费者
+     *
      * Set up a {@link WorkerPool} to distribute an event to one of a pool of work handler threads.
      * Each event will only be processed by one of the work handlers.
      * The Disruptor will automatically start this processors when {@link #start()} is called.
@@ -378,6 +386,7 @@ public class Disruptor<T> {
      * @return the configured ring buffer.
      */
     public RingBuffer<T> start() {
+        //遍历消费者，启动消费者线程
         checkOnlyStartedOnce();
         for (final ConsumerInfo consumerInfo : consumerRepository) {
             consumerInfo.start(executor);
@@ -507,10 +516,14 @@ public class Disruptor<T> {
         return false;
     }
 
+    //1、创建BatchEventProcessor
+    //2、更新gatingSequence：取消跟踪barrierSequences，添加跟踪每个BatchEventProcessor(eventHandler).getSequence
+    //3、new EventHandlerGroup(consumerRepository.add(batchEventProcessor),Processor.getSequence())
     EventHandlerGroup<T> createEventProcessors(final Sequence[] barrierSequences, final EventHandler<? super T>[] eventHandlers) {
         checkNotStarted();
 
         final Sequence[] processorSequences = new Sequence[eventHandlers.length];
+        //一组handler共用一个序列屏障
         final SequenceBarrier barrier = ringBuffer.newBarrier(barrierSequences);
 
         for (int i = 0, eventHandlersLength = eventHandlers.length; i < eventHandlersLength; i++) {
@@ -522,21 +535,27 @@ public class Disruptor<T> {
                 batchEventProcessor.setExceptionHandler(exceptionHandler);
             }
 
+            //添加到消费者仓库
             consumerRepository.add(batchEventProcessor, eventHandler, barrier);
+            //获得processor记录的消费到的seq对象
             processorSequences[i] = batchEventProcessor.getSequence();
         }
-
+        //更新Sequencer监听的消费者seq为最后一个消费者的seq，同时删除前置消费者的seq不再监听，修改前置消费者seq不为链上最后消费者seq
         updateGatingSequencesForNextInChain(barrierSequences, processorSequences);
 
         return new EventHandlerGroup<>(this, consumerRepository, processorSequences);
     }
 
+    //只需保证最慢的消费者seq不被生产者覆盖，前置消费者的seq不需要监听
     private void updateGatingSequencesForNextInChain(final Sequence[] barrierSequences, final Sequence[] processorSequences) {
         if (processorSequences.length > 0) {
+            //seq晚于barrierSequences，只需保证最慢的消费者seq不被生产者覆盖
             ringBuffer.addGatingSequences(processorSequences);
             for (final Sequence barrierSequence : barrierSequences) {
+                //只需保证最慢的消费者seq不被生产者覆盖
                 ringBuffer.removeGatingSequence(barrierSequence);
             }
+            //设置前置消费者seq不是链上最后一个消费者seq
             consumerRepository.unMarkEventProcessorsAsEndOfChain(barrierSequences);
         }
     }

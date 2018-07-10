@@ -43,14 +43,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class WorkProcessor<T> implements EventProcessor {
 
     private final AtomicBoolean               running       = new AtomicBoolean(false);
-    private final Sequence sequence      = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    private final RingBuffer<T> ringBuffer;
-    private final SequenceBarrier sequenceBarrier;
+    /** 当前处理到的seq */
+    private final Sequence                    sequence      = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    private final RingBuffer<T>               ringBuffer;
+    private final SequenceBarrier             sequenceBarrier;
     private final WorkHandler<? super T>      workHandler;
     private final ExceptionHandler<? super T> exceptionHandler;
+    /** 多线程共享，上一次处理的事件的seq */
     private final Sequence                    workSequence;
 
-    private final EventReleaser eventReleaser = new EventReleaser() {
+    private final EventReleaser               eventReleaser = new EventReleaser() {
 
                                                                 @Override
                                                                 public void release() {
@@ -58,7 +60,7 @@ public final class WorkProcessor<T> implements EventProcessor {
                                                                 }
                                                             };
 
-    private final TimeoutHandler timeoutHandler;
+    private final TimeoutHandler              timeoutHandler;
 
     /**
      * Construct a {@link WorkProcessor}.
@@ -94,6 +96,7 @@ public final class WorkProcessor<T> implements EventProcessor {
     @Override
     public void halt() {
         running.set(false);
+        //通知阻塞等待的消费者，sequenceBarrier.waitFor中checkAlert会抛异常，中断线程
         sequenceBarrier.alert();
     }
 
@@ -130,17 +133,22 @@ public final class WorkProcessor<T> implements EventProcessor {
                 // typically, this will be true
                 // this prevents the sequence getting too far forward if an exception
                 // is thrown from the WorkHandler
+                //上一事件是否处理完成，是的话，进入新事件处理流程
                 if (processedSequence) {
                     processedSequence = false;
-                    //使用CAS算法从WorkPool的序列WorkSequence取得可用序列nextSequence
+                    //使用CAS算法从WorkPool的序列WorkSequence取得可用序列nextSequence，保证多线程下多个消费者不会消费到同一个event
                     do {
                         //workSequence 是消费者消费到的位置
+                        //获得下一要处理的seq
                         nextSequence = workSequence.get() + 1L;
+                        //更新当前已处理到的seq为请求的seq-1
                         sequence.set(nextSequence - 1L);
+                        //尝试cas下一workSequence = workSequence+1直到成功
                     } while (!workSequence.compareAndSet(nextSequence - 1L, nextSequence));
                 }
 
                 //如果可使用的最大序列号cachedAvaliableSequence大于等于我们要使用的序列号nextSequence，直接从RingBuffer取数据；不然进入else
+                //请求的seq是否小于缓存的最大可用seq，是的话获得请求的事件，进行处理，处理完成后，processedSequence标记为true
                 if (cachedAvailableSequence >= nextSequence) {
                     //可以满足消费的条件，根据序列号去RingBuffer去读取数据
                     event = ringBuffer.get(nextSequence);
@@ -148,6 +156,7 @@ public final class WorkProcessor<T> implements EventProcessor {
                     //一次消费结束，设置标志位
                     processedSequence = true;
                 } else {//等待生产者生产，获取到最大的可以使用的序列号
+                    //否则，阻塞等待当前可用的最大seq，并更新cache，继续下一循环
                     cachedAvailableSequence = sequenceBarrier.waitFor(nextSequence);
                 }
             } catch (final TimeoutException e) {
@@ -158,6 +167,7 @@ public final class WorkProcessor<T> implements EventProcessor {
                 }
             } catch (final Throwable ex) {
                 // handle, mark as processed, unless the exception handler threw an exception
+                //预留的异常处理接口
                 exceptionHandler.handleEventException(ex, nextSequence, event);
                 processedSequence = true;
             }

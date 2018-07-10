@@ -16,6 +16,7 @@
 package com.lmax.disruptor;
 
 /**
+ * 获得当前指针序号
  * Implementors of this interface must provide a single long value
  * that represents their current cursor value.  Used during dynamic
  * add/remove of Sequences from a

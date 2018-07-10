@@ -15,6 +15,9 @@
  */
 package com.lmax.disruptor;
 
+/**
+ * 提供获取Event对象的方法
+ */
 public interface DataProvider<T> {
 
     T get(long sequence);

@@ -30,10 +30,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class WorkerPool<T> {
     
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final Sequence workSequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    private final RingBuffer<T> ringBuffer;
+    private final AtomicBoolean      started      = new AtomicBoolean(false);
+    /**多个Processor共用一个处理的seq */
+    private final Sequence           workSequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    private final RingBuffer<T>      ringBuffer;
+
     // WorkProcessors are created to wrap each of the provided WorkHandlers
+    /**处理线程组*/
     private final WorkProcessor<?>[] workProcessors;
 
     /**
@@ -52,6 +55,7 @@ public final class WorkerPool<T> {
                       final ExceptionHandler<? super T> exceptionHandler, final WorkHandler<? super T>... workHandlers) {
         this.ringBuffer = ringBuffer;
         final int numWorkers = workHandlers.length;
+        //一个handler一个线程
         workProcessors = new WorkProcessor[numWorkers];
 
         for (int i = 0; i < numWorkers; i++) {
@@ -80,10 +84,12 @@ public final class WorkerPool<T> {
             workProcessors[i] = new WorkProcessor<>(ringBuffer, barrier, workHandlers[i], exceptionHandler, workSequence);
         }
 
+        //添加消费者seq
         ringBuffer.addGatingSequences(getWorkerSequences());
     }
 
     /**
+     * 每个Processor消费到的Sequence加上workSequence，共同作为消费者seq
      * Get an array of {@link Sequence}s representing the progress of the workers.
      *
      * @return an array of {@link Sequence}s representing the progress of the workers.
@@ -110,11 +116,15 @@ public final class WorkerPool<T> {
             throw new IllegalStateException("WorkerPool has already been started and cannot be restarted until halted.");
         }
 
+        //生产者当前生产到的seq
         final long cursor = ringBuffer.getCursor();
+        //从生产者当前生产到的seq开始消费，作为workSeq
         workSequence.set(cursor);
 
         for (WorkProcessor<?> processor : workProcessors) {
+            //遍历processor，设置workSeq
             processor.getSequence().set(cursor);
+            //放入线程池
             executor.execute(processor);
         }
 
@@ -122,15 +132,19 @@ public final class WorkerPool<T> {
     }
 
     /**
+     * 等待消费者处理完，然后暂停
      * Wait for the {@link RingBuffer} to drain of published events then halt the workers.
      */
     public void drainAndHalt() {
+        //获得消费者消费到的seq
         Sequence[] workerSequences = getWorkerSequences();
+        //如果生产者覆盖了消费者未消费的seq，则等待
         while (ringBuffer.getCursor() > Util.getMinimumSequence(workerSequences)) {
             Thread.yield();
         }
 
         for (WorkProcessor<?> processor : workProcessors) {
+            //消费者中断阻塞
             processor.halt();
         }
 
@@ -142,9 +156,11 @@ public final class WorkerPool<T> {
      */
     public void halt() {
         for (WorkProcessor<?> processor : workProcessors) {
+            //消费者中断阻塞
             processor.halt();
         }
 
+        //停止线程池
         started.set(false);
     }
 

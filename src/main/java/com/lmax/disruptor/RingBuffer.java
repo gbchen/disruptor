@@ -70,11 +70,11 @@ abstract class RingBufferFields<E> extends RingBufferPad {
 
     /**
      * 用来进行某个序号对应位置的运算
-     * 和上面的BufferPad 一共8*8B
      */
     private final long        indexMask;
     private final Object[]    entries;
     protected final int       bufferSize;
+    /** 序列管理 */
     protected final Sequencer sequencer;
 
     RingBufferFields(EventFactory<E> eventFactory, Sequencer sequencer) {
@@ -152,6 +152,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
+     * 创建多生产者的RingBuffer
      * Create a new multiple producer RingBuffer using the default wait strategy  {@link BlockingWaitStrategy}.
      *
      * @param <E> Class of the event stored in the ring buffer.
@@ -166,6 +167,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
+     * 创建单生产者的RingBuffer
      * Create a new single producer RingBuffer with the specified wait strategy.
      *
      * @param <E> Class of the event stored in the ring buffer.
@@ -196,8 +198,8 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
+     * 根据ProducerType创建ring buffer : SINGLE or MULTI
      * Create a new Ring Buffer with the specified producer type (SINGLE or MULTI)
-     * 创建ring buffer : SINGLE or MULTI
      *
      * @param <E> Class of the event stored in the ring buffer.
      * @param producerType producer type to use {@link ProducerType}.

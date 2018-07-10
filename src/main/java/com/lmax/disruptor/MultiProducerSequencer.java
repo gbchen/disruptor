@@ -276,7 +276,9 @@ public final class MultiProducerSequencer extends AbstractSequencer {
      */
     @Override
     public boolean isAvailable(long sequence) {
+        //槽位
         int index = calculateIndex(sequence);
+        //圈数
         int flag = calculateAvailabilityFlag(sequence);
         long bufferAddress = (index * SCALE) + BASE;
         return UNSAFE.getIntVolatile(availableBuffer, bufferAddress) == flag;

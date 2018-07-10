@@ -27,6 +27,7 @@ package com.lmax.disruptor;
  */
 public interface EventProcessor extends Runnable {
     /**
+     * 获取一个事件处理器使用的序列引用。
      * Get a reference to the {@link Sequence} being used by this {@link EventProcessor}.
      *
      * @return reference to the {@link Sequence} for this {@link EventProcessor}

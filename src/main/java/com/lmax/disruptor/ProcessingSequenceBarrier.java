@@ -25,10 +25,19 @@ import com.lmax.disruptor.exception.TimeoutException;
  */
 final class ProcessingSequenceBarrier implements SequenceBarrier {
 
+    /** 等待策略 */
     private final WaitStrategy waitStrategy;
+
+    /** 前置消费者的Sequence，如果没有，则等于生产者的Sequence */
     private final Sequence     dependentSequence;
+
+    /** 是否已通知 */
     private volatile boolean   alerted = false;
+
+    /** 生产者的Sequence */
     private final Sequence     cursorSequence;
+
+    /** 生产者seq管理器，获得最大可用long，MultiProducerSequencer 或 SingleProducerSequencer */
     private final Sequencer    sequencer;
 
     ProcessingSequenceBarrier(final Sequencer sequencer, final WaitStrategy waitStrategy, final Sequence cursorSequence,
@@ -50,16 +59,20 @@ final class ProcessingSequenceBarrier implements SequenceBarrier {
      */
     @Override
     public long waitFor(final long sequence) throws AlertException, InterruptedException, TimeoutException {
+        //先检测是否已通知生产者，通知过则发异常
         checkAlert();
 
         //waitStrategy 的默认实现是 BlockingWaitStrategy
+        //然后根据等待策略来等待可用的序列值，消费者批量消费到的seq，可能未发布事件
         long availableSequence = waitStrategy.waitFor(sequence, cursorSequence, dependentSequence, this);
 
+        //如果可用的序列值小于请求的序列，那么直接返回可用的序列。
         if (availableSequence < sequence) {
             return availableSequence;
         }
 
         //检查生产者的位置信息的标志是否正常.这个是和生产者的publish方法联系起来的.
+        //否则，返回能使用（已发布事件）的最大的序列值，
         return sequencer.getHighestPublishedSequence(sequence, availableSequence);
     }
 
@@ -75,7 +88,9 @@ final class ProcessingSequenceBarrier implements SequenceBarrier {
 
     @Override
     public void alert() {
+        //设置通知标记
         alerted = true;
+        //如果有线程以阻塞的方式等待序列，将其唤醒。
         waitStrategy.signalAllWhenBlocking();
     }
 
