@@ -50,10 +50,16 @@ class ConsumerRepository<T> implements Iterable<ConsumerInfo> {
         }
     }
 
+    /**
+     * 获得处理链上的最后一个消费者消费到的Seqs
+     */
     public Sequence[] getLastSequenceInChain(boolean includeStopped) {
         List<Sequence> lastSequence = new ArrayList<>();
         for (ConsumerInfo consumerInfo : consumerInfos) {
+            //如不包含已停止的，且已停止，继续遍历直到碰到未停止的，判断是否是最后一个消费者，如果包含已停止的，则继续下面的代码,
+            // 是否是最后一个消费者
             if ((includeStopped || consumerInfo.isRunning()) && consumerInfo.isEndOfChain()) {
+                //获得当前处理到的seq，如果是BatchEventProcess数量为1，如果是WorkerPool则为多个：每个Processor的Seq+workSeq
                 final Sequence[] sequences = consumerInfo.getSequences();
                 Collections.addAll(lastSequence, sequences);
             }
@@ -75,6 +81,9 @@ class ConsumerRepository<T> implements Iterable<ConsumerInfo> {
         return getEventProcessorFor(handler).getSequence();
     }
 
+    /**
+     * 设置这些Processor不为最后一个Processor
+     */
     public void unMarkEventProcessorsAsEndOfChain(final Sequence... barrierEventProcessors) {
         for (Sequence barrierEventProcessor : barrierEventProcessors) {
             getEventProcessorInfo(barrierEventProcessor).markAsUsedInBarrier();
