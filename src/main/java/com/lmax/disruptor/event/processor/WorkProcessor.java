@@ -119,11 +119,11 @@ public final class WorkProcessor<T> implements EventProcessor {
 
         notifyStart();
 
-        //标志位，用来标志一次消费过程，此标志位在代码方面用的很巧妙，把两次执行揉成一段代码
+        // 标志位，用来标志一次消费过程
         boolean processedSequence = true;
-        //用来缓存消费者可以使用的RingBuffer最大序列号
+        // 用来缓存消费者可以使用的RingBuffer最大序列号
         long cachedAvailableSequence = Long.MIN_VALUE;
-        //记录被分配的WorkSequence的序列号，也是去RingBuffer取数据的序列号
+        // 记录被分配的WorkSequence的序列号，也是去RingBuffer取数据的序列号
         long nextSequence = sequence.get();
         T event = null;
         while (true) {
@@ -133,30 +133,30 @@ public final class WorkProcessor<T> implements EventProcessor {
                 // typically, this will be true
                 // this prevents the sequence getting too far forward if an exception
                 // is thrown from the WorkHandler
-                //上一事件是否处理完成，是的话，进入新事件处理流程
+                // 上一事件是否处理完成，是的话，进入新事件处理流程
                 if (processedSequence) {
                     processedSequence = false;
-                    //使用CAS算法从WorkPool的序列WorkSequence取得可用序列nextSequence，保证多线程下多个消费者不会消费到同一个event
+                    // 使用CAS算法从WorkPool的序列WorkSequence取得可用序列nextSequence，保证多线程下多个消费者不会消费到同一个event
                     do {
-                        //workSequence 是消费者消费到的位置
-                        //获得下一要处理的seq
+                        // workSequence 是消费者消费到的位置
+                        // 获得下一要处理的seq
                         nextSequence = workSequence.get() + 1L;
-                        //更新当前已处理到的seq为请求的seq-1
+                        // 更新当前已处理到的seq为请求的seq-1
                         sequence.set(nextSequence - 1L);
-                        //尝试cas下一workSequence = workSequence+1直到成功
+                        // 尝试cas下一workSequence = workSequence+1直到成功
                     } while (!workSequence.compareAndSet(nextSequence - 1L, nextSequence));
                 }
 
-                //如果可使用的最大序列号cachedAvaliableSequence大于等于我们要使用的序列号nextSequence，直接从RingBuffer取数据；不然进入else
-                //请求的seq是否小于缓存的最大可用seq，是的话获得请求的事件，进行处理，处理完成后，processedSequence标记为true
+                // 如果可使用的最大序列号cachedAvaliableSequence大于等于我们要使用的序列号nextSequence，直接从RingBuffer取数据；不然进入else
+                // 请求的seq是否小于缓存的最大可用seq，是的话获得请求的事件，进行处理，处理完成后，processedSequence标记为true
                 if (cachedAvailableSequence >= nextSequence) {
-                    //可以满足消费的条件，根据序列号去RingBuffer去读取数据
+                    // 可以满足消费的条件，根据序列号去RingBuffer去读取数据
                     event = ringBuffer.get(nextSequence);
                     workHandler.onEvent(event);
-                    //一次消费结束，设置标志位
+                    // 一次消费结束，设置标志位
                     processedSequence = true;
-                } else {//等待生产者生产，获取到最大的可以使用的序列号
-                    //否则，阻塞等待当前可用的最大seq，并更新cache，继续下一循环
+                } else {// 等待生产者生产，获取到最大的可以使用的序列号
+                    // 否则，阻塞等待当前可用的最大seq，并更新cache，继续下一循环
                     cachedAvailableSequence = sequenceBarrier.waitFor(nextSequence);
                 }
             } catch (final TimeoutException e) {
@@ -166,8 +166,7 @@ public final class WorkProcessor<T> implements EventProcessor {
                     break;
                 }
             } catch (final Throwable ex) {
-                // handle, mark as processed, unless the exception handler threw an exception
-                //预留的异常处理接口
+                // 预留的异常处理接口
                 exceptionHandler.handleEventException(ex, nextSequence, event);
                 processedSequence = true;
             }

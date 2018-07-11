@@ -22,6 +22,7 @@ import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.exception.AlertException;
 
 /**
+ * 先尝试一百次，再不满足条件，当前线程就yield，让其他线程先执行
  * Yielding strategy that uses a Thread.yield() for {@link com.lmax.disruptor.EventProcessor}s waiting on a barrier
  * after an initially spinning.
  * <p>
@@ -38,6 +39,8 @@ public final class YieldingWaitStrategy implements WaitStrategy {
         long availableSequence;
         int counter = SPIN_TRIES;
 
+        //循环，如果生产的最大序列号小于消费者需要的序列号，继续等待，等待次数超过counter次，线程yield
+        //这里dependentSequence就是cursorSequence,在ProcessorSequencerBarrier构造函数中可以看到
         while ((availableSequence = dependentSequence.get()) < sequence) {
             counter = applyWaitMethod(barrier, counter);
         }
@@ -49,6 +52,7 @@ public final class YieldingWaitStrategy implements WaitStrategy {
     public void signalAllWhenBlocking() {
     }
 
+    //counter大于0则减一返回，否则当前线程yield
     private int applyWaitMethod(final SequenceBarrier barrier, int counter) throws AlertException {
         barrier.checkAlert();
 

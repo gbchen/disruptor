@@ -127,31 +127,38 @@ public final class MultiProducerSequencer extends AbstractSequencer {
         long current;
         long next;
 
+        // while循环主要服务CAS算法，不成功就重来
         do {
-            //生产者当前写入到的序列号
+            // 生产者当前写入到的最新序列号
             current = cursor.get();
-            //下一个序列号
+            // 要获取的序列号
             next = current + n;
 
+            // wrapPoint是一个很关键的变量，这个变量决定生产者是否可以覆盖序列号nextSequence，
+            // wrapPoint是为什么是nextSequence - bufferSize；RingBuffer表现出来的是一个环形的数据结构，实际上是一个长度为bufferSize的数组，
+            // nextSequence - bufferSize如果nextSequence小于bufferSize wrapPoint是负数，表示可以一直生产；
+            // 如果nextSequence大于bufferSize wrapPoint是一个大于0的数，由于生产者和消费者的序列号差距不能超过bufferSize
+            // （超过bufferSize会覆盖消费者未消费的数据），wrapPoint要小于等于多个消费者线程中消费的最小的序列号，即cachedGatingSequence的值,这就是下面if判断的根据
             long wrapPoint = next - bufferSize;
-            //cachedGatingSequence, gatingSequenceCache这两个变量记录着上一次获取消费者中最小的消费序列号,也就是最慢的消费者消费的位置
+            // cachedGatingSequence, gatingSequenceCache这两个变量记录着上一次获取消费者中最小的消费序列号,也就是最慢的消费者消费的位置
             long cachedGatingSequence = gatingSequenceCache.get();
 
+            // 生产者不能继续写入，否则会覆盖消费者未消费的数据
             if (wrapPoint > cachedGatingSequence || cachedGatingSequence > current) {
-                //获取最新的消费者最小的消费序号
+                // 获取最新的消费者最小的消费序号
                 long gatingSequence = Util.getMinimumSequence(gatingSequences, current);
 
-                //依然不能满足写入条件(写入会覆盖未消费的数据)
+                // 依然不能满足写入条件(写入会覆盖未消费的数据)
                 if (wrapPoint > gatingSequence) {
-                    //锁一会，结束本次循环，重来
+                    // 锁一会，结束本次循环，重来
                     LockSupport.parkNanos(1); // TODO, should we spin based on the wait strategy?
                     continue;
                 }
 
-                //缓存一下消费者中最小的消费序列号
+                // 缓存一下消费者中最小的消费序列号
                 gatingSequenceCache.set(gatingSequence);
             } else if (cursor.compareAndSet(current, next)) {
-                //满足消费条件，有空余的空间让生产者写入，使用CAS算法，成功则跳出本次循环，不成功则重来
+                // 满足消费条件，有空余的空间让生产者写入，使用CAS算法，成功则跳出本次循环，不成功则重来
                 break;
             }
         } while (true);

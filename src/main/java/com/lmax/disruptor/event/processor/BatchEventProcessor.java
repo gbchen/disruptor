@@ -92,6 +92,7 @@ public final class BatchEventProcessor<T> implements EventProcessor {
         return sequence;
     }
 
+    //线程运行设置为false, Barrier的alert设置为true，run（）方法执行while循环的时候会检查一下alert，为true则跳出循环
     @Override
     public void halt() {
         running.set(HALTED);

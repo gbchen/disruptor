@@ -433,12 +433,14 @@ public class Disruptor<T> {
      */
     public void shutdown(final long timeout, final TimeUnit timeUnit) throws TimeoutException {
         final long timeOutAt = System.currentTimeMillis() + timeUnit.toMillis(timeout);
+        //断是否有剩余消息未发送，有则继续循环
         while (hasBacklog()) {
             if (timeout >= 0 && System.currentTimeMillis() > timeOutAt) {
                 throw TimeoutException.INSTANCE;
             }
             // Busy spin
         }
+        //数据全部发送和消费完毕
         halt();
     }
 
@@ -509,6 +511,7 @@ public class Disruptor<T> {
     private boolean hasBacklog() {
         final long cursor = ringBuffer.getCursor();
         for (final Sequence consumer : consumerRepository.getLastSequenceInChain(false)) {
+            //通过判断生产数是否等于消费数，等于表示生产消费结束，返回false
             if (cursor > consumer.get()) {
                 return true;
             }
@@ -574,6 +577,7 @@ public class Disruptor<T> {
     }
 
     EventHandlerGroup<T> createWorkerPool(final Sequence[] barrierSequences, final WorkHandler<? super T>[] workHandlers) {
+        //创建SequenceBarrier，每次消费者要读取RingBuffer中的下一个值都要通过SequenceBarrier来获取,SequenceBarrier用来协调多个消费者并发的问题
         final SequenceBarrier sequenceBarrier = ringBuffer.newBarrier(barrierSequences);
         final WorkerPool<T> workerPool = new WorkerPool<>(ringBuffer, sequenceBarrier, exceptionHandler, workHandlers);
 

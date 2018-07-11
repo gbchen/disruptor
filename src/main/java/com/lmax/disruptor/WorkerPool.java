@@ -78,6 +78,7 @@ public final class WorkerPool<T> {
         ringBuffer = RingBuffer.createMultiProducer(eventFactory, 1024, new BlockingWaitStrategy());
         final SequenceBarrier barrier = ringBuffer.newBarrier();
         final int numWorkers = workHandlers.length;
+        //创建一个和workHandlers个数相同的WorkProcessor数组,也就是线程数
         workProcessors = new WorkProcessor[numWorkers];
 
         for (int i = 0; i < numWorkers; i++) {
@@ -105,6 +106,7 @@ public final class WorkerPool<T> {
     }
 
     /**
+     * 根据一系列的引用，找到消费者程序WorkProcessor，初始化每个WorkProcessor的sequence，然后执行提交到线程池执行
      * Start the worker pool processing events in sequence.
      *
      * @param executor providing threads for running the workers.

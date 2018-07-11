@@ -23,6 +23,7 @@ import com.lmax.disruptor.exception.AlertException;
 import com.lmax.disruptor.util.ThreadHints;
 
 /**
+ * 当队列没有可消费的数据时，会一直执行循环，因此会造成CPU的使用率很高，需要特别注意
  * Busy Spin strategy that uses a busy spin loop for {@link com.lmax.disruptor.EventProcessor}s waiting on a barrier.
  * <p>
  * This strategy will use CPU resource to avoid syscalls which can introduce latency jitter.  It is best

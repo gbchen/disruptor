@@ -453,7 +453,9 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      */
     @Override
     public void publishEvent(EventTranslator<E> translator) {
+        // 获取RingBuffer下一个可操作的序列
         final long sequence = sequencer.next();
+        // 把数据set到队列，设置cursor的序列
         translateAndPublish(translator, sequence);
     }
 
@@ -477,9 +479,9 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      */
     @Override
     public <A> void publishEvent(EventTranslatorOneArg<E, A> translator, A arg0) {
-        //获取RingBuffer下一个可操作的序列
+        // 获取RingBuffer下一个可操作的序列
         final long sequence = sequencer.next();
-        //把数据set到队列，设置cursor的序列
+        // 把数据set到队列，设置cursor的序列
         translateAndPublish(translator, sequence, arg0);
     }
 

@@ -53,6 +53,7 @@ final class ProcessingSequenceBarrier implements SequenceBarrier {
     }
 
     /**
+     * 等待生产者生产出更多的产品用来消费
      * waitFor方法第一个参数是消费者期望消费的索引序列号，
      * cursorSequence是生产者的current，
      * 返回值availableSequence是实际可消费的索引号，这个值返回后，生产者还要做检查，就是通过最下面的 getHighestPublishedSequence方法：
