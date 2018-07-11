@@ -24,6 +24,10 @@ import com.lmax.disruptor.util.Util;
 
 
 /**
+ * 这个类没有缓存行填充，因为主要的四个域中，可变的域有两个：gatingSequenceCache 和availableBuffer；
+ * gatingSequenceCache 本身为Sequence，做了缓存行填充。
+ * availableBuffer是一个很大的数组，其中的每个元素都会改变，但是同一时刻只会有一个线程读取访问修改其中的元素的值，所以，没必要做缓冲行填充。
+ *
  * <p>Coordinator for claiming sequences for access to a data structure while tracking dependent {@link Sequence}s.
  * Suitable for use for sequencing across multiple publisher threads.</p>
  *
@@ -34,23 +38,27 @@ import com.lmax.disruptor.util.Util;
 public final class MultiProducerSequencer extends AbstractSequencer {
 
     private static final Unsafe UNSAFE              = Util.getUnsafe();
+
     /** 数组第一个元素的偏移量（内存位置） */
     private static final long   BASE                = UNSAFE.arrayBaseOffset(int[].class);
+
     /** 数组每个元素大小 */
     private static final long   SCALE               = UNSAFE.arrayIndexScale(int[].class);
 
-    /**
-     * 最慢消费者seq缓存，不是每次都计算,只有覆盖点>最慢消费者seq时，再次请求计算最新的最慢消费者seq
-     */
+    /** 最慢消费者seq缓存，不是每次都计算,只有覆盖点>最慢消费者seq时，再次请求计算最新的最慢消费者seq */
     private final Sequence      gatingSequenceCache = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
 
-    // availableBuffer tracks the state of each ringbuffer slot
-    // see below for more details on the approach
+    /**
+     * 这个数组标记RingBuffer的状态,判断可以消费的sequence
+     * 每个槽存过几个Event，就是sequence到底转了多少圈，存在这个数组里，下标就是每个槽。
+     * 为什么不直接将sequence存入availableBuffer，因为这样sequence值会过大，很容易溢出
+     */
     private final int[]         availableBuffer;
 
     /**bufferSize-1,用于取模求圈数 */
     private final int           indexMask;
-    /**8->3,为了后面>>>运算，m>>>n = m除以2的n次方 */
+
+    /**8->3,为了后面>>>运算，m>>>n = m除以2的n次方，就是上面的n，用来定位某个sequence到底转了多少圈，用来标识已被发布的sequence*/
     private final int           indexShift;
 
     /**
@@ -188,6 +196,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
         long current;
         long next;
 
+        //尝试获取一次，若不成功，则抛InsufficientCapacityException
         do {
             current = cursor.get();
             next = current + n;
@@ -243,6 +252,8 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
+     * 发布某个sequence之前的都可以被消费了需要将availableBuffer上对应sequence下标的值设置为第几次用到这个槽
+     *
      * The below methods work on the availableBuffer flag.
      * <p>
      * The prime reason is to avoid a shared sequence object between publisher threads.
@@ -266,10 +277,8 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
-     * //按内存地址位置指定int[]元素的值，值为圈数
+     * 按内存地址位置指定int[]元素的值，值为圈数
      *     index：槽位，flag：圈数
-     * @param index
-     * @param flag
      */
     private void setAvailableBufferValue(int index, int flag) {
         //计算槽位对应的内存地址
@@ -293,7 +302,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
-     *  //lowerBound 到 availableSequence之间 最大可用seq
+     * lowerBound 到 availableSequence之间 最大可用seq
      */
     @Override
     public long getHighestPublishedSequence(long lowerBound, long availableSequence) {
@@ -306,11 +315,17 @@ public final class MultiProducerSequencer extends AbstractSequencer {
         return availableSequence;
     }
 
+    /**
+     * 某个sequence右移indexShift，代表这个Sequence是第几次用到这个ringBuffer的某个槽，也就是这个sequence转了多少圈
+     */
     private int calculateAvailabilityFlag(final long sequence) {
         //圈数
         return (int) (sequence >>> indexShift);
     }
 
+    /**
+     * 定位ringBuffer上某个槽用于生产event，对2^n取模 = 对2^n -1
+     */
     private int calculateIndex(final long sequence) {
         //槽位
         return ((int) sequence) & indexMask;
