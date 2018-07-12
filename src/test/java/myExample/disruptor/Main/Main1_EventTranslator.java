@@ -41,5 +41,7 @@ public class Main1_EventTranslator {
 //            longEventProducerWithTranslator.onData(l,l);
         }
 
+        disruptor.shutdown();
+        executor.shutdown();
     }
 }

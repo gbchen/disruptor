@@ -48,5 +48,8 @@ public class Main0_EventProducer {
             producer.onData(l);
         }
 
+        disruptor.shutdown();
+        executor.shutdown();
+
     }
 }

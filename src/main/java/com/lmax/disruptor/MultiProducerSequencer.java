@@ -175,7 +175,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
-     * //不阻塞，获取失败，抛异常
+     * 不阻塞，获取失败，抛异常
      * @see Sequencer#tryNext()
      */
     @Override
@@ -184,7 +184,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
-     * //不阻塞，获取失败，抛异常
+     * 不阻塞，获取失败，抛异常
      * @see Sequencer#tryNext(int)
      */
     @Override

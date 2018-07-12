@@ -145,8 +145,7 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
         // 这里两个判断条件：
         // 一是看生产者生产是不是超过了消费者，所以判断的是覆盖点是否超过了最慢消费者；
         // 二是看消费者是否超过了当前生产者的最大序号，判断的是消费者是不是比生产者还快这种异常情况 ？？
-//        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue) {
-        if (wrapPoint > cachedGatingSequence ) {
+        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue) {
             cursor.setVolatile(nextValue); // StoreLoad fence
 
             long minSequence;

@@ -11,6 +11,7 @@ import myExample.disruptor.LongEventHandler;
 import myExample.disruptor.LongEventProducer;
 
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,7 +23,7 @@ import java.util.concurrent.ThreadFactory;
  **/
 public class Main2_ProducerType_WaitStrategy {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         // ExecutorService executor = Executors.newCachedThreadPool();
         ThreadFactory threadFactory = Executors.defaultThreadFactory();
 
@@ -42,6 +43,7 @@ public class Main2_ProducerType_WaitStrategy {
         final LongEventProducer producer = new LongEventProducer(ringBuffer);
 
         final CyclicBarrier cb = new CyclicBarrier(10);
+
         ExecutorService executor1 = Executors.newCachedThreadPool();
         for (long i = 0; i < 10; ++i){
             final long value = i;
@@ -59,5 +61,8 @@ public class Main2_ProducerType_WaitStrategy {
             });
         }
 
+        Thread.sleep(100);
+        disruptor.shutdown();
+        executor1.shutdown();
     }
 }
