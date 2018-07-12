@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
  **/
 public class LockIsBadChoice_1_SingleThread {
 
-    public static final Long MAX_NUM    = 1000 * 1000 * 100L;
+    public static final Long MAX_NUM    = 1000 * 1000 * 1000L;
     public static final int  BarrierNum = 2;
 
     public static void main(String[] args) throws BrokenBarrierException, InterruptedException {
