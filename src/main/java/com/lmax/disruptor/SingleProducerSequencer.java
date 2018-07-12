@@ -132,11 +132,10 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
         long nextSequence = nextValue + n;
 
         // 覆盖点，即该生产者如果发布了这次的序列号，那它最终会落在哪个位置，得到下一个要生产的序号对应的位置
-        // wrapPoint是一个很关键的变量，这个变量决定生产者是否可以覆盖序列号nextSequence，
         // wrapPoint为什么是nextSequence - bufferSize：
         // RingBuffer表现出来的是一个环形的数据结构，实际上是一个长度为bufferSize的数组，
-        // 如果nextSequence小于bufferSize,wrapPoint是负数，表示可以一直生产(就是刚开始的情况，队列为空的，从未放过数据)。
-        // 如果nextSequence大于bufferSize,wrapPoint是一个大于0的数，由于生产者和消费者的序列号差距不能超过bufferSize（超过bufferSize会覆盖消费者未消费的数据），
+        // 如果nextSequence < bufferSize,wrapPoint是负数，表示可以一直生产(就是刚开始的情况，队列为空的，从未放过数据)。
+        // 如果nextSequence > bufferSize,wrapPoint是一个大于0的数，由于生产者和消费者的序列号差距不能超过bufferSize（超过bufferSize会覆盖消费者未消费的数据），
         // wrapPoint要小于等于多个消费者线程中消费的最小的序列号，即cachedValue的值,这就是下面if判断的根据
         long wrapPoint = nextSequence - bufferSize;
 
@@ -146,7 +145,8 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
         // 这里两个判断条件：
         // 一是看生产者生产是不是超过了消费者，所以判断的是覆盖点是否超过了最慢消费者；
         // 二是看消费者是否超过了当前生产者的最大序号，判断的是消费者是不是比生产者还快这种异常情况 ？？
-        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue) {
+//        if (wrapPoint > cachedGatingSequence || cachedGatingSequence > nextValue) {
+        if (wrapPoint > cachedGatingSequence ) {
             cursor.setVolatile(nextValue); // StoreLoad fence
 
             long minSequence;

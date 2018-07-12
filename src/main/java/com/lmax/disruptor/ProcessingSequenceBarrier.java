@@ -25,7 +25,6 @@ import com.lmax.disruptor.exception.TimeoutException;
  */
 final class ProcessingSequenceBarrier implements SequenceBarrier {
 
-    /** 等待策略 */
     private final WaitStrategy waitStrategy;
 
     /** 前置消费者的Sequence，如果没有，则等于生产者的Sequence */
