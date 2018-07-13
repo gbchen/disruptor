@@ -288,7 +288,7 @@ public final class MultiProducerSequencer extends AbstractSequencer {
     }
 
     /**
-     *  //是否可用：seq计算出的圈数是否已被设置到availableBuffer
+     * 是否可用：seq计算出的圈数是否已被设置到availableBuffer
      * @see Sequencer#isAvailable(long)
      */
     @Override

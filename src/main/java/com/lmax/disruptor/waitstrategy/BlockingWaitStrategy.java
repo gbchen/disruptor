@@ -38,7 +38,8 @@ public final class BlockingWaitStrategy implements WaitStrategy {
     public long waitFor(long sequence, Sequence cursorSequence, Sequence dependentSequence,
                         SequenceBarrier barrier) throws AlertException, InterruptedException {
         long availableSequence;
-        // cursorSequence 就是生产者的写指针，sequence 是消费者期望的消费索引号，相当于读指针
+        // sequence 是消费者期望的消费索引号，相当于读指针
+        // cursorSequence 就是生产者的写指针
         if (cursorSequence.get() < sequence) {
             synchronized (mutex) {
                 while (cursorSequence.get() < sequence) {

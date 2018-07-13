@@ -62,8 +62,7 @@ final class ProcessingSequenceBarrier implements SequenceBarrier {
         //先检测是否已通知生产者，通知过则发异常
         checkAlert();
 
-        //waitStrategy 的默认实现是 BlockingWaitStrategy
-        //然后根据等待策略来等待可用的序列值，消费者批量消费到的seq，可能未发布事件
+        //根据等待策略来等待可用的序列值
         long availableSequence = waitStrategy.waitFor(sequence, cursorSequence, dependentSequence, this);
 
         //如果可用的序列值小于请求的序列，那么直接返回可用的序列。
@@ -71,8 +70,8 @@ final class ProcessingSequenceBarrier implements SequenceBarrier {
             return availableSequence;
         }
 
-        //检查生产者的位置信息的标志是否正常.这个是和生产者的publish方法联系起来的.
-        //否则，返回能使用（已发布事件）的最大的序列值，
+        //availableSequence >= next时，检查生产者的位置信息的标志是否正常.这个是和生产者的publish方法联系起来的. 否则，返回能使用（已发布事件）的最大的序列值，
+        //消费者可以在此追赶生产者
         return sequencer.getHighestPublishedSequence(sequence, availableSequence);
     }
 
