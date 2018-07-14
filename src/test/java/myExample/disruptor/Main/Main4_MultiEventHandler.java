@@ -40,7 +40,7 @@ public class Main4_MultiEventHandler {
         /*
          * 串行处理 h1--h2
          */
-         disruptor.handleEventsWith(eventHandler1).handleEventsWith(eventHandler2);
+//         disruptor.handleEventsWith(eventHandler1).handleEventsWith(eventHandler2);
 
         /*
          * 并行处理,两种写法 h1 -- h2
@@ -72,7 +72,7 @@ public class Main4_MultiEventHandler {
          * h1--    --h4
          *      h3
          */
-//        disruptor.handleEventsWith(eventHandler1).handleEventsWith(eventHandler2,eventHandler3).handleEventsWith(eventHandler4);
+        disruptor.handleEventsWith(eventHandler1).handleEventsWith(eventHandler2,eventHandler3).handleEventsWith(eventHandler4);
 
         /*
          * h1    h3

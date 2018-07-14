@@ -13,13 +13,15 @@ public class BitComputer {
         long a = 0;
         long marked = System.currentTimeMillis();
         for (long i = 0; i < M ; ++i){
-            a = i%8;
+//            a = i%8;
+            a = i&(8-1);
         }
         System.out.println(" Loop times:" + (System.currentTimeMillis() - marked) + "ms");
 
         marked = System.currentTimeMillis();
         for (long i = 0; i < M ; ++i){
-            a = i&(8-1);
+//            a = i&(8-1);
+            a = i%8;
         }
         System.out.println( " Loop times:" + (System.currentTimeMillis() - marked) + "ms");
     }
