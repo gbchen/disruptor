@@ -23,13 +23,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.lmax.disruptor.*;
-import com.lmax.disruptor.exception.handler.FatalExceptionHandler;
+import com.lmax.disruptor.FatalExceptionHandler;
 import com.lmax.disruptor.support.EventCountingQueueProcessor;
 import com.lmax.disruptor.support.EventCountingWorkHandler;
 import com.lmax.disruptor.support.ValueEvent;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 import com.lmax.disruptor.util.PaddedLong;
-import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
+import com.lmax.disruptor.YieldingWaitStrategy;
 
 public final class OneToThreeWorkerPoolThroughputTest extends AbstractPerfTestDisruptor {
 

@@ -1,11 +1,5 @@
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.event.translator.EventTranslator;
-import com.lmax.disruptor.event.translator.EventTranslatorOneArg;
-import com.lmax.disruptor.event.translator.EventTranslatorThreeArg;
-import com.lmax.disruptor.event.translator.EventTranslatorTwoArg;
-import com.lmax.disruptor.event.translator.EventTranslatorVararg;
-
 /**
  * 事件发布
  * @param <E> 事件类型

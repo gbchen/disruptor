@@ -15,7 +15,6 @@
  */
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.exception.handler.IgnoreExceptionHandler;
 import com.lmax.disruptor.support.TestEvent;
 import org.junit.Test;
 

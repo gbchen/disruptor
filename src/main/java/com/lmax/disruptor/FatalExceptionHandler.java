@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor.exception.handler;
-
-import com.lmax.disruptor.ExceptionHandler;
+package com.lmax.disruptor;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

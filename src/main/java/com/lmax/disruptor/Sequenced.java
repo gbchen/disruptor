@@ -1,7 +1,5 @@
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.exception.InsufficientCapacityException;
-
 /**
  * 序号管理
  */

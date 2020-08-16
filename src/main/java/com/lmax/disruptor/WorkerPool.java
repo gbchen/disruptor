@@ -15,9 +15,7 @@
  */
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.event.processor.WorkProcessor;
 import com.lmax.disruptor.util.Util;
-import com.lmax.disruptor.waitstrategy.BlockingWaitStrategy;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;

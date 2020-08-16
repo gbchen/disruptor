@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor.exception;
-
-import com.lmax.disruptor.EventProcessor;
-import com.lmax.disruptor.SequenceBarrier;
+package com.lmax.disruptor;
 
 /**
  * Used to alert {@link EventProcessor}s waiting at a {@link SequenceBarrier} of status changes.

@@ -1,11 +1,11 @@
 package com.lmax.disruptor.offheap;
 
 import com.lmax.disruptor.*;
-import com.lmax.disruptor.event.processor.BatchEventProcessor;
+import com.lmax.disruptor.BatchEventProcessor;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 import com.lmax.disruptor.util.PaddedLong;
 import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
+import com.lmax.disruptor.YieldingWaitStrategy;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

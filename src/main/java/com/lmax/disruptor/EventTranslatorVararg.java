@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor.event.translator;
-
-import com.lmax.disruptor.RingBuffer;
+package com.lmax.disruptor;
 
 /**
  * Implementations translate another data representations into events claimed from the {@link RingBuffer}
@@ -23,16 +21,13 @@ import com.lmax.disruptor.RingBuffer;
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
  * @see EventTranslator
  */
-public interface EventTranslatorThreeArg<T, A, B, C>
-{
+public interface EventTranslatorVararg<T> {
     /**
      * Translate a data representation into fields set in given event
      *
      * @param event    into which the data should be translated.
      * @param sequence that is assigned to event.
-     * @param arg0     The first user specified argument to the translator
-     * @param arg1     The second user specified argument to the translator
-     * @param arg2     The third user specified argument to the translator
+     * @param args     The array of user arguments.
      */
-    void translateTo(T event, long sequence, A arg0, B arg1, C arg2);
+    void translateTo(T event, long sequence, Object... args);
 }

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lmax.disruptor.waitstrategy;
+package com.lmax.disruptor;
 
 
 import com.lmax.disruptor.Sequence;
 import com.lmax.disruptor.SequenceBarrier;
 import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.exception.AlertException;
+import com.lmax.disruptor.AlertException;
 
 /**
  * 先尝试一百次，再不满足条件，当前线程就yield，让其他线程先执行

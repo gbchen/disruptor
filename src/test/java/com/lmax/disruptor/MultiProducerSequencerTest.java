@@ -18,7 +18,6 @@ package com.lmax.disruptor;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import com.lmax.disruptor.waitstrategy.BlockingWaitStrategy;
 import org.junit.Test;
 
 public class MultiProducerSequencerTest

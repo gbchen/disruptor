@@ -25,8 +25,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.lmax.disruptor.*;
-import com.lmax.disruptor.event.processor.BatchEventProcessor;
-import com.lmax.disruptor.waitstrategy.BlockingWaitStrategy;
+import com.lmax.disruptor.BatchEventProcessor;
+import com.lmax.disruptor.BlockingWaitStrategy;
 import org.HdrHistogram.Histogram;
 
 import com.lmax.disruptor.support.ValueEvent;

@@ -1,10 +1,8 @@
 package com.lmax.disruptor;
 
 import com.lmax.disruptor.dsl.ProducerType;
-import com.lmax.disruptor.exception.InsufficientCapacityException;
 import com.lmax.disruptor.support.DummyWaitStrategy;
 import com.lmax.disruptor.util.DaemonThreadFactory;
-import com.lmax.disruptor.waitstrategy.BlockingWaitStrategy;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

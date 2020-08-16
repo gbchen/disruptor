@@ -15,8 +15,6 @@
  */
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.event.processor.BatchEventProcessor;
-
 /**
  * Implement this interface in your {@link EventHandler} to be notified when a thread for the
  * {@link BatchEventProcessor} starts and shuts down.

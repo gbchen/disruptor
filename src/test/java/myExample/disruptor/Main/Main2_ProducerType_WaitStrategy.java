@@ -3,15 +3,12 @@ package myExample.disruptor.Main;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.lmax.disruptor.waitstrategy.BlockingWaitStrategy;
-import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
+import com.lmax.disruptor.BlockingWaitStrategy;
 import myExample.disruptor.LongEvent;
 import myExample.disruptor.LongEventFactory;
 import myExample.disruptor.LongEventHandler;
 import myExample.disruptor.LongEventProducer;
 
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

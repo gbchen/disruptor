@@ -1,10 +1,10 @@
-package com.lmax.disruptor.waitstrategy;
+package com.lmax.disruptor;
 
 import com.lmax.disruptor.Sequence;
 import com.lmax.disruptor.SequenceBarrier;
 import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.exception.AlertException;
-import com.lmax.disruptor.exception.TimeoutException;
+import com.lmax.disruptor.AlertException;
+import com.lmax.disruptor.TimeoutException;
 
 import java.util.concurrent.TimeUnit;
 

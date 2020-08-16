@@ -24,13 +24,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 
 import com.lmax.disruptor.*;
-import com.lmax.disruptor.event.processor.WorkProcessor;
-import com.lmax.disruptor.exception.handler.IgnoreExceptionHandler;
+import com.lmax.disruptor.WorkProcessor;
+import com.lmax.disruptor.IgnoreExceptionHandler;
 import com.lmax.disruptor.support.ValueAdditionWorkHandler;
 import com.lmax.disruptor.support.ValueEvent;
 import com.lmax.disruptor.support.ValuePublisher;
 import com.lmax.disruptor.util.DaemonThreadFactory;
-import com.lmax.disruptor.waitstrategy.BusySpinWaitStrategy;
+import com.lmax.disruptor.BusySpinWaitStrategy;
 
 /**
  * <pre>

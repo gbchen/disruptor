@@ -8,9 +8,7 @@
  */
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.event.processor.BatchEventProcessor;
 import com.lmax.disruptor.support.StubEvent;
-import com.lmax.disruptor.waitstrategy.BusySpinWaitStrategy;
 import org.junit.Test;
 
 import java.util.ArrayList;

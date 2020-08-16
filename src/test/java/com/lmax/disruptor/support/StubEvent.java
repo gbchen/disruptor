@@ -16,7 +16,7 @@
 package com.lmax.disruptor.support;
 
 import com.lmax.disruptor.EventFactory;
-import com.lmax.disruptor.event.translator.EventTranslatorTwoArg;
+import com.lmax.disruptor.EventTranslatorTwoArg;
 
 public final class StubEvent {
 

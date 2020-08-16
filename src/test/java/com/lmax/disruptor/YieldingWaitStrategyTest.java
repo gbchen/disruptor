@@ -17,7 +17,6 @@ package com.lmax.disruptor;
 
 import static com.lmax.disruptor.support.WaitStrategyTestUtil.assertWaitForWithDelayOf;
 
-import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
 import org.junit.Test;
 
 public class YieldingWaitStrategyTest {

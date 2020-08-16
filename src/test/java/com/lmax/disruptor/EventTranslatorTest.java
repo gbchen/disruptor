@@ -15,7 +15,6 @@
  */
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.event.translator.EventTranslator;
 import com.lmax.disruptor.support.StubEvent;
 import org.junit.Assert;
 import org.junit.Test;

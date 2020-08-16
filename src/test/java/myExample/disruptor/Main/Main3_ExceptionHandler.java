@@ -3,7 +3,7 @@ package myExample.disruptor.Main;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
-import com.lmax.disruptor.exception.handler.IgnoreExceptionHandler;
+import com.lmax.disruptor.IgnoreExceptionHandler;
 import myExample.disruptor.LongEvent;
 import myExample.disruptor.LongEventFactory;
 import myExample.disruptor.extend.LongEventHandlerThrowsException;

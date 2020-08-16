@@ -1,9 +1,8 @@
 package myExample.disruptor;
 
 import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.event.translator.EventTranslator;
-import com.lmax.disruptor.event.translator.EventTranslatorOneArg;
-import com.lmax.disruptor.event.translator.EventTranslatorTwoArg;
+import com.lmax.disruptor.EventTranslatorOneArg;
+import com.lmax.disruptor.EventTranslatorTwoArg;
 
 /**
  * @author cgb

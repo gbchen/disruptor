@@ -17,7 +17,6 @@ package com.lmax.disruptor;
 
 import static com.lmax.disruptor.support.WaitStrategyTestUtil.assertWaitForWithDelayOf;
 
-import com.lmax.disruptor.waitstrategy.BusySpinWaitStrategy;
 import org.junit.Test;
 
 public class BusySpinWaitStrategyTest

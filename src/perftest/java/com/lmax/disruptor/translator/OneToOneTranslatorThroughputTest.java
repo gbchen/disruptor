@@ -18,13 +18,13 @@ package com.lmax.disruptor.translator;
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.lmax.disruptor.event.translator.EventTranslatorOneArg;
+import com.lmax.disruptor.EventTranslatorOneArg;
 import com.lmax.disruptor.support.PerfTestUtil;
 import com.lmax.disruptor.support.ValueAdditionEventHandler;
 import com.lmax.disruptor.support.ValueEvent;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 import com.lmax.disruptor.util.MutableLong;
-import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
+import com.lmax.disruptor.YieldingWaitStrategy;
 
 import java.util.concurrent.CountDownLatch;
 

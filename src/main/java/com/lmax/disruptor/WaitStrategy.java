@@ -15,10 +15,6 @@
  */
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.event.processor.BatchEventProcessor;
-import com.lmax.disruptor.exception.AlertException;
-import com.lmax.disruptor.exception.TimeoutException;
-
 /**
  * 等待策略
  * Strategy employed for making {@link EventProcessor}s wait on a cursor {@link Sequence}.

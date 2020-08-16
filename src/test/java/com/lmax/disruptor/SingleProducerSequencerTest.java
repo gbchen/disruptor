@@ -1,6 +1,5 @@
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.waitstrategy.BusySpinWaitStrategy;
 import org.junit.Test;
 
 import static org.hamcrest.core.IsNot.not;

@@ -18,7 +18,6 @@ package com.lmax.disruptor;
 import static com.lmax.disruptor.support.WaitStrategyTestUtil.assertWaitForWithDelayOf;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-import com.lmax.disruptor.waitstrategy.PhasedBackoffWaitStrategy;
 import org.junit.Test;
 
 public class PhasedBackoffWaitStrategyTest

@@ -27,13 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.lmax.disruptor.event.processor.NoOpEventProcessor;
-import com.lmax.disruptor.event.translator.EventTranslator;
-import com.lmax.disruptor.event.translator.EventTranslatorOneArg;
-import com.lmax.disruptor.event.translator.EventTranslatorThreeArg;
-import com.lmax.disruptor.event.translator.EventTranslatorTwoArg;
-import com.lmax.disruptor.event.translator.EventTranslatorVararg;
-import com.lmax.disruptor.exception.InsufficientCapacityException;
 import org.junit.Test;
 
 import com.lmax.disruptor.support.StubEvent;

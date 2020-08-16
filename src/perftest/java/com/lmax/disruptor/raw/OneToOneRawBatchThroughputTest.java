@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.util.DaemonThreadFactory;
-import com.lmax.disruptor.waitstrategy.YieldingWaitStrategy;
+import com.lmax.disruptor.YieldingWaitStrategy;
 
 /**
  * <pre>
