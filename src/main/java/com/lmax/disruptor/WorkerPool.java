@@ -21,20 +21,41 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * WorkPool整体表示一个消费者，当handler处理较慢，但是可以并发执行时，可以采用WorkPool提升消费速度。
+ * (每一个handler都会有一个单独的线程，这些handler共同完成事件处理，每一个事件只会被其中某一个handler处理)
+ *
  * WorkerPool contains a pool of {@link WorkProcessor}s that will consume sequences so jobs can be farmed out across a pool of workers.
  * Each of the {@link WorkProcessor}s manage and calls a {@link WorkHandler} to process the events.
  *
  * @param <T> event to be processed by a pool of workers
  */
-public final class WorkerPool<T> {
-    
-    private final AtomicBoolean      started      = new AtomicBoolean(false);
-    /**多个Processor共用一个处理的seq */
-    private final Sequence           workSequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    private final RingBuffer<T>      ringBuffer;
+public final class WorkerPool<T>
+{
+    private final AtomicBoolean started = new AtomicBoolean(false);
 
+    /**
+     * 消费者的进度取决于最小的Sequence。每一个WorkProcessor都有一个Sequence，根据WorkProcessor的Sequence可以得到消费者的进度。
+     *
+     * 1.那么问题来了，WorkerPool还带一个Sequence干嘛呢？
+     * 答案：是WorkProcessor竞争通信的媒介！预分配(抢占)序号用的，竞争成功表示告诉其他workProcessor去消费下一个序号。
+     * workSequence总是大于workProcessors的sequence的，因此它并不代表消费者的进度。workSequence甚至可能大于生产者的生产进度。
+     *
+     * WorkProcessor首先与workSequence同步，然后CAS更新workSequence (+1)。
+     * 更新成功之后，workProcessor的进度处在workSequence更新之前进度上，就算有多个WorkProcessor进行了预分配，
+     * 总有一个WorkProcessor的Sequence处于正确的进度。由于消费者的进度由最小的Sequence决定，
+     * 因此workSequence的预分配更新并不会影响WorkerPool代表的消费者的消费进度。
+     *
+     * 2.预分配序号时+1的意义？
+     * 保证了WorkerPool代表的消费者的进度是1格1格前进的，且尽可能的使所有的线程都在处理事件(保证执行效率)。
+     *
+     * 3.WorkerPool中最少有两个Sequence，WorkProcessor 和 WorkerPool各带一个。
+     */
+    private final Sequence workSequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+
+    private final RingBuffer<T> ringBuffer;
+
+    // 事件处理器，每一个都是一个无限循环的任务，因此都需要独立的线程
     // WorkProcessors are created to wrap each of the provided WorkHandlers
-    /**处理线程组*/
     private final WorkProcessor<?>[] workProcessors;
 
     /**
@@ -49,15 +70,24 @@ public final class WorkerPool<T> {
      * @param workHandlers     to distribute the work load across.
      */
     @SafeVarargs
-    public WorkerPool(final RingBuffer<T> ringBuffer, final SequenceBarrier sequenceBarrier,
-                      final ExceptionHandler<? super T> exceptionHandler, final WorkHandler<? super T>... workHandlers) {
+    public WorkerPool(
+        final RingBuffer<T> ringBuffer,
+        final SequenceBarrier sequenceBarrier,
+        final ExceptionHandler<? super T> exceptionHandler,
+        final WorkHandler<? super T>... workHandlers)
+    {
         this.ringBuffer = ringBuffer;
         final int numWorkers = workHandlers.length;
-        //一个handler一个线程
         workProcessors = new WorkProcessor[numWorkers];
 
-        for (int i = 0; i < numWorkers; i++) {
-            workProcessors[i] = new WorkProcessor<>(ringBuffer, sequenceBarrier, workHandlers[i], exceptionHandler, workSequence);
+        for (int i = 0; i < numWorkers; i++)
+        {
+            workProcessors[i] = new WorkProcessor<>(
+                ringBuffer,
+                sequenceBarrier,
+                workHandlers[i],
+                exceptionHandler,
+                workSequence);
         }
     }
 
@@ -71,31 +101,39 @@ public final class WorkerPool<T> {
      * @param workHandlers     to distribute the work load across.
      */
     @SafeVarargs
-    public WorkerPool(final EventFactory<T> eventFactory, final ExceptionHandler<? super T> exceptionHandler,
-                      final WorkHandler<? super T>... workHandlers) {
+    public WorkerPool(
+        final EventFactory<T> eventFactory,
+        final ExceptionHandler<? super T> exceptionHandler,
+        final WorkHandler<? super T>... workHandlers)
+    {
         ringBuffer = RingBuffer.createMultiProducer(eventFactory, 1024, new BlockingWaitStrategy());
         final SequenceBarrier barrier = ringBuffer.newBarrier();
         final int numWorkers = workHandlers.length;
-        //创建一个和workHandlers个数相同的WorkProcessor数组,也就是线程数
         workProcessors = new WorkProcessor[numWorkers];
 
-        for (int i = 0; i < numWorkers; i++) {
-            workProcessors[i] = new WorkProcessor<>(ringBuffer, barrier, workHandlers[i], exceptionHandler, workSequence);
+        for (int i = 0; i < numWorkers; i++)
+        {
+            workProcessors[i] = new WorkProcessor<>(
+                ringBuffer,
+                barrier,
+                workHandlers[i],
+                exceptionHandler,
+                workSequence);
         }
 
-        //添加消费者seq
         ringBuffer.addGatingSequences(getWorkerSequences());
     }
 
     /**
-     * 每个Processor消费到的Sequence加上workSequence，共同作为消费者seq
      * Get an array of {@link Sequence}s representing the progress of the workers.
      *
      * @return an array of {@link Sequence}s representing the progress of the workers.
      */
-    public Sequence[] getWorkerSequences() {
+    public Sequence[] getWorkerSequences()
+    {
         final Sequence[] sequences = new Sequence[workProcessors.length + 1];
-        for (int i = 0, size = workProcessors.length; i < size; i++) {
+        for (int i = 0, size = workProcessors.length; i < size; i++)
+        {
             sequences[i] = workProcessors[i].getSequence();
         }
         sequences[sequences.length - 1] = workSequence;
@@ -104,27 +142,25 @@ public final class WorkerPool<T> {
     }
 
     /**
-     * 根据一系列的引用，找到消费者程序WorkProcessor，初始化每个WorkProcessor的sequence，然后执行提交到线程池执行
      * Start the worker pool processing events in sequence.
      *
      * @param executor providing threads for running the workers.
      * @return the {@link RingBuffer} used for the work queue.
      * @throws IllegalStateException if the pool has already been started and not halted yet
      */
-    public RingBuffer<T> start(final Executor executor) {
-        if (!started.compareAndSet(false, true)) {
+    public RingBuffer<T> start(final Executor executor)
+    {
+        if (!started.compareAndSet(false, true))
+        {
             throw new IllegalStateException("WorkerPool has already been started and cannot be restarted until halted.");
         }
 
-        //生产者当前生产到的seq
         final long cursor = ringBuffer.getCursor();
-        //从生产者当前生产到的seq开始消费，作为workSeq
         workSequence.set(cursor);
 
-        for (WorkProcessor<?> processor : workProcessors) {
-            //遍历processor，设置workSeq
+        for (WorkProcessor<?> processor : workProcessors)
+        {
             processor.getSequence().set(cursor);
-            //放入线程池
             executor.execute(processor);
         }
 
@@ -132,19 +168,18 @@ public final class WorkerPool<T> {
     }
 
     /**
-     * 等待消费者处理完，然后暂停
      * Wait for the {@link RingBuffer} to drain of published events then halt the workers.
      */
-    public void drainAndHalt() {
-        //获得消费者消费到的seq
+    public void drainAndHalt()
+    {
         Sequence[] workerSequences = getWorkerSequences();
-        //如果生产者覆盖了消费者未消费的seq，则等待
-        while (ringBuffer.getCursor() > Util.getMinimumSequence(workerSequences)) {
+        while (ringBuffer.getCursor() > Util.getMinimumSequence(workerSequences))
+        {
             Thread.yield();
         }
 
-        for (WorkProcessor<?> processor : workProcessors) {
-            //消费者中断阻塞
+        for (WorkProcessor<?> processor : workProcessors)
+        {
             processor.halt();
         }
 
@@ -154,17 +189,18 @@ public final class WorkerPool<T> {
     /**
      * Halt all workers immediately at the end of their current cycle.
      */
-    public void halt() {
-        for (WorkProcessor<?> processor : workProcessors) {
-            //消费者中断阻塞
+    public void halt()
+    {
+        for (WorkProcessor<?> processor : workProcessors)
+        {
             processor.halt();
         }
 
-        //停止线程池
         started.set(false);
     }
 
-    public boolean isRunning() {
+    public boolean isRunning()
+    {
         return started.get();
     }
 }

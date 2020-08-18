@@ -16,12 +16,16 @@
 package com.lmax.disruptor;
 
 /**
+ * 它是{@link WorkProcessor}处理事件的实现，两者之间是组合关系，{@link WorkProcessor}负责跟踪和拉取事件，{@link WorkHandler}负责处理事件。
+ * 手动加粗：{@link WorkHandler}不是消费者。
+ *
  * Callback interface to be implemented for processing units of work as they become available in the {@link RingBuffer}.
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
  * @see WorkerPool
  */
-public interface WorkHandler<T> {
+public interface WorkHandler<T>
+{
     /**
      * Callback to indicate a unit of work needs to be processed.
      *

@@ -18,6 +18,9 @@ package com.lmax.disruptor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * WorkPool消费者里面的事件处理单元，不是消费者，只是一个消费者里面的一个工作单元，多个WorkProcessor协作构成WorkPool消费者。
+ * {@link WorkProcessor}负责跟踪和拉取事件，{@link WorkHandler}负责处理事件。
+ *
  * <p>A {@link WorkProcessor} wraps a single {@link WorkHandler}, effectively consuming the sequence
  * and ensuring appropriate barriers.</p>
  *
@@ -25,27 +28,53 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @param <T> event implementation storing the details for the work to processed.
  */
-public final class WorkProcessor<T> implements EventProcessor {
-
-    private final AtomicBoolean               running       = new AtomicBoolean(false);
-    /** 当前处理到的seq */
-    private final Sequence                    sequence      = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
-    private final RingBuffer<T>               ringBuffer;
-    private final SequenceBarrier             sequenceBarrier;
-    private final WorkHandler<? super T>      workHandler;
+public final class WorkProcessor<T>
+    implements EventProcessor
+{
+    /**
+	 * 运行状态
+	 */
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    /**
+     * workProcessor处理进度(上一次处理的序号)
+     * 为何要是Sequence这个线程安全的对象呢？因为会被生产者线程们查询
+     */
+    private final Sequence sequence = new Sequence(Sequencer.INITIAL_CURSOR_VALUE);
+    /**
+	 * 生产者消费者共享的数据结构，{@link WorkProcessor}之间先竞争sequence，竞争成功的那个可以消费。
+	 */
+    private final RingBuffer<T> ringBuffer;
+    /**
+     * WorkProcessor所属的消费者的屏障。
+     */
+    private final SequenceBarrier sequenceBarrier;
+    /**
+     * WorkProcessor绑定的事件处理器。
+     * {@link WorkProcessor}负责跟踪和拉取事件，{@link WorkHandler}负责处理事件。
+     */
+    private final WorkHandler<? super T> workHandler;
+    /**
+     * workProcessor绑定的异常处理器，
+     * 警告！！！默认的异常处理器{@link com.lmax.disruptor.dsl.Disruptor#exceptionHandler}，出现异常时会打断运行，可能导致死锁。
+     */
     private final ExceptionHandler<? super T> exceptionHandler;
-    /** 多线程共享，上一次处理的事件的seq */
-    private final Sequence                    workSequence;
+    /**
+	 * WorkerPool中的 workProcessor竞争通信的媒介。
+	 * 详见：{@link WorkerPool#workSequence}
+	 */
+    private final Sequence workSequence;
 
-    private final EventReleaser               eventReleaser = new EventReleaser() {
+    private final EventReleaser eventReleaser = new EventReleaser()
+    {
+        @Override
+        public void release()
+        {
+            // 设置为MAX_VALUE可以使得当前线程停止消费，且不影响生产者和其它消费者
+            sequence.set(Long.MAX_VALUE);
+        }
+    };
 
-                                                                @Override
-                                                                public void release() {
-                                                                    sequence.set(Long.MAX_VALUE);
-                                                                }
-                                                            };
-
-    private final TimeoutHandler              timeoutHandler;
+    private final TimeoutHandler timeoutHandler;
 
     /**
      * Construct a {@link WorkProcessor}.
@@ -57,16 +86,21 @@ public final class WorkProcessor<T> implements EventProcessor {
      * @param workSequence     from which to claim the next event to be worked on.  It should always be initialised
      *                         as {@link Sequencer#INITIAL_CURSOR_VALUE}
      */
-    public WorkProcessor(final RingBuffer<T> ringBuffer, final SequenceBarrier sequenceBarrier,
-                         final WorkHandler<? super T> workHandler, final ExceptionHandler<? super T> exceptionHandler,
-                         final Sequence workSequence) {
+    public WorkProcessor(
+        final RingBuffer<T> ringBuffer,
+        final SequenceBarrier sequenceBarrier,
+        final WorkHandler<? super T> workHandler,
+        final ExceptionHandler<? super T> exceptionHandler,
+        final Sequence workSequence)
+    {
         this.ringBuffer = ringBuffer;
         this.sequenceBarrier = sequenceBarrier;
         this.workHandler = workHandler;
         this.exceptionHandler = exceptionHandler;
         this.workSequence = workSequence;
 
-        if (this.workHandler instanceof EventReleaseAware) {
+        if (this.workHandler instanceof EventReleaseAware)
+        {
             ((EventReleaseAware) this.workHandler).setEventReleaser(eventReleaser);
         }
 
@@ -74,119 +108,167 @@ public final class WorkProcessor<T> implements EventProcessor {
     }
 
     @Override
-    public Sequence getSequence() {
+    public Sequence getSequence()
+    {
         return sequence;
     }
 
     @Override
-    public void halt() {
+    public void halt()
+    {
         running.set(false);
-        //通知阻塞等待的消费者，sequenceBarrier.waitFor中checkAlert会抛异常，中断线程
         sequenceBarrier.alert();
     }
 
     @Override
-    public boolean isRunning() {
+    public boolean isRunning()
+    {
         return running.get();
     }
 
     /**
      * It is ok to have another thread re-run this method after a halt().
      *
+     * 暂停之后交给下一个线程运行是线程安全的
+	 *
      * @throws IllegalStateException if this processor is already running
      */
     @Override
-    public void run() {
-        if (!running.compareAndSet(false, true)) {
+    public void run()
+    {
+    	// CAS操作保证只有一个线程能运行，和保证可见性（看见状态为false后于前一个线程将其设置为false）
+        if (!running.compareAndSet(false, true))
+        {
             throw new IllegalStateException("Thread is already running");
         }
+        // 清除特定状态(可理解为清除线程的中断状态)
         sequenceBarrier.clearAlert();
 
         notifyStart();
 
-        // 标志位，用来标志一次消费过程
+        // 是否处理了一个事件。在处理完一个事件之后会再次竞争序号进行消费
         boolean processedSequence = true;
-        // 用来缓存消费者可以使用的RingBuffer最大序列号
+        // 看见的已发布序号的缓存，这里是局部变量，在该变量上无竞争
         long cachedAvailableSequence = Long.MIN_VALUE;
-        // 记录被分配的WorkSequence的序列号，也是去RingBuffer取数据的序列号
+        // 下一个要消费的序号(要消费的事件编号)，注意起始为-1 ，注意与BatchEventProcessor的区别
+		// BatchEventProcessor初始值为 sequence.get()+1
+		// 存为local variable 还减少大量的volatile变量读，且保证本次操作过程中的一致性
         long nextSequence = sequence.get();
+        // 要消费的事件对象
         T event = null;
-        while (true) {
-            try {
+        while (true)
+        {
+            try
+            {
+				// 如果前一个事情被成功处理了--拉取下一个序号，并将上一个序号标记为已成功处理。
+				// 一般来说，这都是正确的。
+				// 这可以防止当workHandler抛出异常时,Sequence跨度太大。
+
                 // if previous sequence was processed - fetch the next sequence and set
                 // that we have successfully processed the previous sequence
                 // typically, this will be true
                 // this prevents the sequence getting too far forward if an exception
                 // is thrown from the WorkHandler
-                // 上一事件是否处理完成，是的话，进入新事件处理流程
-                if (processedSequence) {
+                if (processedSequence)
+                {
                     processedSequence = false;
-                    // 使用CAS算法从WorkPool的序列WorkSequence取得可用序列nextSequence，保证多线程下多个消费者不会消费到同一个event
-                    do {
-                        // workSequence 是消费者消费到的位置
-                        // 获得下一要处理的seq
+                    do
+                    {
+                        // 获取workProcessor所属的消费者的进度，与workSequence同步(感知其他消费者的进度)
                         nextSequence = workSequence.get() + 1L;
-                        // 更新当前已处理到的seq为请求的seq-1
                         sequence.set(nextSequence - 1L);
-                        // 尝试cas下一workSequence = workSequence+1直到成功
-                    } while (!workSequence.compareAndSet(nextSequence - 1L, nextSequence));
+                    }
+                    while (!workSequence.compareAndSet(nextSequence - 1L, nextSequence));
+                    // CAS更新workSequence的序号(预分配序号)，为什么这样是安全的呢？
+					// 由于消费者的进度由最小的Sequence决定，当它CAS更新workSequence之后，它代替了workSequence处在旧的进度上。
+					// 就算多个workProcessor竞争，总有一个是处在正确的进度上的。因此 workSequence 的更新并不会影响WorkerPool代表的消费者的消费进度。
                 }
 
-                // 如果可使用的最大序列号cachedAvaliableSequence大于等于我们要使用的序列号nextSequence，直接从RingBuffer取数据；不然进入else
-                // 请求的seq是否小于缓存的最大可用seq，是的话获得请求的事件，进行处理，处理完成后，processedSequence标记为true
-                if (cachedAvailableSequence >= nextSequence) {
-                    // 可以满足消费的条件，根据序列号去RingBuffer去读取数据
+				// 它只能保证竞争到的序号是可用的，因此只能只消费一个。
+				// 而BatchEventProcessor看见的所有序号都是可用的
+                if (cachedAvailableSequence >= nextSequence)
+                {
                     event = ringBuffer.get(nextSequence);
                     workHandler.onEvent(event);
-                    // 一次消费结束，设置标志位
                     processedSequence = true;
-                } else {// 等待生产者生产，获取到最大的可以使用的序列号
-                    // 否则，阻塞等待当前可用的最大seq，并更新cache，继续下一循环
+                }
+                else
+                {
+                    // 等待生产者进行生产，这里和BatchEventProcessor不同，
+                    // 如果waitFor抛出TimeoutException、Throwable以外的异常，那么cachedAvailableSequence不会被更新，
+                    // 也就不会导致nextSequence被标记为已消费！
                     cachedAvailableSequence = sequenceBarrier.waitFor(nextSequence);
                 }
-            } catch (final TimeoutException e) {
+            }
+            catch (final TimeoutException e)
+            {
                 notifyTimeout(sequence.get());
-            } catch (final AlertException ex) {
-                if (!running.get()) {
+            }
+            catch (final AlertException ex)
+            {
+                if (!running.get())
+                {
                     break;
                 }
-            } catch (final Throwable ex) {
-                // 预留的异常处理接口
+            }
+            catch (final Throwable ex)
+            {
+                // handle, mark as processed, unless the exception handler threw an exception
+                // 同样的警告！如果在处理异常时抛出新的异常，会导致跳出while循环，导致WorkProcessor停止工作，可能导致死锁
+                // 而系统默认的异常处理会将其包装为RuntimeException！！！
                 exceptionHandler.handleEventException(ex, nextSequence, event);
+
+                // 成功处理异常后标记当前事件已被消费
                 processedSequence = true;
             }
         }
 
         notifyShutdown();
 
+        // 写volatile，插入StoreLoad屏障，保证其他线程能看见我退出前的所有操作
         running.set(false);
     }
 
-    private void notifyTimeout(final long availableSequence) {
-        try {
-            if (timeoutHandler != null) {
+    private void notifyTimeout(final long availableSequence)
+    {
+        try
+        {
+            if (timeoutHandler != null)
+            {
                 timeoutHandler.onTimeout(availableSequence);
             }
-        } catch (Throwable e) {
+        }
+        catch (Throwable e)
+        {
             exceptionHandler.handleEventException(e, availableSequence, null);
         }
     }
 
-    private void notifyStart() {
-        if (workHandler instanceof LifecycleAware) {
-            try {
+    private void notifyStart()
+    {
+        if (workHandler instanceof LifecycleAware)
+        {
+            try
+            {
                 ((LifecycleAware) workHandler).onStart();
-            } catch (final Throwable ex) {
+            }
+            catch (final Throwable ex)
+            {
                 exceptionHandler.handleOnStartException(ex);
             }
         }
     }
 
-    private void notifyShutdown() {
-        if (workHandler instanceof LifecycleAware) {
-            try {
+    private void notifyShutdown()
+    {
+        if (workHandler instanceof LifecycleAware)
+        {
+            try
+            {
                 ((LifecycleAware) workHandler).onShutdown();
-            } catch (final Throwable ex) {
+            }
+            catch (final Throwable ex)
+            {
                 exceptionHandler.handleOnShutdownException(ex);
             }
         }

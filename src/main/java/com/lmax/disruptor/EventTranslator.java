@@ -15,10 +15,10 @@
  */
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.RingBuffer;
-
 /**
- * 事件转换器。实际上就是新事件向旧事件覆盖的接口定义。
+ * 事件传输对象，将数据传输到指定事件对象上
+ * TO(transfer object) 数据传输对象，基本也是每个事件对应一个对象。
+ *
  * <p>Implementations translate (write) data representations into events claimed from the {@link RingBuffer}.</p>
  *
  * <p>When publishing to the RingBuffer, provide an EventTranslator. The RingBuffer will select the next available
@@ -27,8 +27,10 @@ import com.lmax.disruptor.RingBuffer;
  *
  * @param <T> event implementation storing the data for sharing during exchange or parallel coordination of an event.
  */
-public interface EventTranslator<T> {
+public interface EventTranslator<T>
+{
     /**
+	 * 将数据传输到指定事件对象上。
      * Translate a data representation into fields set in given event
      *
      * @param event    into which the data should be translated.

@@ -15,52 +15,68 @@
  */
 package com.lmax.disruptor;
 
-import com.lmax.disruptor.Sequence;
-import com.lmax.disruptor.SequenceBarrier;
-import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.AlertException;
-
 import java.util.concurrent.locks.LockSupport;
 
 /**
+ * 睡眠等待策略。
+ * <p>
+ * 等待方式：自旋 + yield + sleep
+ * <p>
+ * 表现：延迟不均匀，吞吐量较低，但是cpu占有率也较低。
+ * 算是CPU与性能之间的一个折中，当CPU资源紧张时可以考虑使用该策略。
+ *
+ *
  * Sleeping strategy that initially spins, then uses a Thread.yield(), and
  * eventually sleep (<code>LockSupport.parkNanos(n)</code>) for the minimum
  * number of nanos the OS and JVM will allow while the
- * {@link com.lmax.disruptor.EventProcessor}s are waiting on a barrier.
+ * {@link EventProcessor}s are waiting on a barrier.
  * <p>
  * This strategy is a good compromise between performance and CPU resource.
  * Latency spikes can occur after quiet periods.  It will also reduce the impact
  * on the producing thread as it will not need signal any conditional variables
  * to wake up the event handling thread.
  */
-public final class SleepingWaitStrategy implements WaitStrategy {
+public final class SleepingWaitStrategy implements WaitStrategy
+{
+	/**
+	 * 默认空循环次数
+	 */
+    private static final int DEFAULT_RETRIES = 200;
+    /**
+     * 默认每次睡眠时间(睡太久影响响应性，睡太短占用CPU资源)
+     */
+    private static final long DEFAULT_SLEEP = 100;
 
-    private static final int  DEFAULT_RETRIES = 200;
-    private static final long DEFAULT_SLEEP   = 100;
+    private final int retries;
+    private final long sleepTimeNs;
 
-    private final int         retries;
-    private final long        sleepTimeNs;
-
-    public SleepingWaitStrategy() {
+    public SleepingWaitStrategy()
+    {
         this(DEFAULT_RETRIES, DEFAULT_SLEEP);
     }
 
-    public SleepingWaitStrategy(int retries) {
+    public SleepingWaitStrategy(int retries)
+    {
         this(retries, DEFAULT_SLEEP);
     }
 
-    public SleepingWaitStrategy(int retries, long sleepTimeNs) {
+    public SleepingWaitStrategy(int retries, long sleepTimeNs)
+    {
         this.retries = retries;
         this.sleepTimeNs = sleepTimeNs;
     }
 
     @Override
-    public long waitFor(final long sequence, Sequence cursor, final Sequence dependentSequence,
-                        final SequenceBarrier barrier) throws AlertException {
+    public long waitFor(
+        final long sequence, Sequence cursor, final Sequence dependentSequence, final SequenceBarrier barrier)
+        throws AlertException
+    {
         long availableSequence;
         int counter = retries;
 
-        while ((availableSequence = dependentSequence.get()) < sequence) {
+        while ((availableSequence = dependentSequence.get()) < sequence)
+        {
+            // 当依赖的消费者还没消费完该序号的事件时执行等待方法
             counter = applyWaitMethod(barrier, counter);
         }
 
@@ -68,18 +84,29 @@ public final class SleepingWaitStrategy implements WaitStrategy {
     }
 
     @Override
-    public void signalAllWhenBlocking() {
+    public void signalAllWhenBlocking()
+    {
     }
 
-    private int applyWaitMethod(final SequenceBarrier barrier, int counter) throws AlertException {
+    private int applyWaitMethod(final SequenceBarrier barrier, int counter)
+        throws AlertException
+    {
         barrier.checkAlert();
 
-        if (counter > 100) {
+        // 空循环计数大于100时，简单的空循环
+        if (counter > 100)
+        {
             --counter;
-        } else if (counter > 0) {
+        }
+        // 空循环计数大于0时，尝试让出CPU
+        else if (counter > 0)
+        {
             --counter;
             Thread.yield();
-        } else {
+        }
+        else
+        {
+        	// 不再空循环占用CPU，睡眠
             LockSupport.parkNanos(sleepTimeNs);
         }
 

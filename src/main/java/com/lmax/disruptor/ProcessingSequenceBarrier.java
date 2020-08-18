@@ -17,88 +17,114 @@ package com.lmax.disruptor;
 
 
 /**
+ * 消费者使用的事件处理器序号屏障
  * {@link SequenceBarrier} handed out for gating {@link EventProcessor}s on a cursor sequence and optional dependent {@link EventProcessor}(s),
  * using the given WaitStrategy.
  */
-final class ProcessingSequenceBarrier implements SequenceBarrier {
-
+final class ProcessingSequenceBarrier implements SequenceBarrier
+{
+    /**
+     * 消费者的等待策略
+     */
     private final WaitStrategy waitStrategy;
+    /**
+     * 依赖的Sequence。
+     * EventProcessor(事件处理器)的Sequence必须小于等于依赖的Sequence
+     * 来自于{@link com.lmax.disruptor.dsl.EventHandlerGroup#sequences}
+     *
+     * 对于直接和Sequencer相连的消费者，它依赖的Sequence就是Sequencer的Sequence。
+     * 对于跟在其它消费者屁股后面的消费者，它依赖的Sequence就是它跟随的所有消费者的Sequence。
+     *
+     * 类似 {@link AbstractSequencer#gatingSequences}
+     * dependentSequence
+     */
+    private final Sequence dependentSequence;
+    /**
+     * 是否请求了关闭消费者
+     */
+    private volatile boolean alerted = false;
+    /**
+     * 生产者的进度(cursor)
+     * 依赖该屏障的事件处理器的进度【必然要小于等于】生产者的进度
+     */
+    private final Sequence cursorSequence;
+    /**
+     * 序号生成器(来自生产者)
+     */
+    private final Sequencer sequencer;
 
-    /** 前置消费者的Sequence，如果没有，则等于生产者的Sequence */
-    private final Sequence     dependentSequence;
-
-    /** 是否已通知 */
-    private volatile boolean   alerted = false;
-
-    /** 生产者的Sequence */
-    private final Sequence     cursorSequence;
-
-    /** 生产者seq管理器，获得最大可用long，MultiProducerSequencer 或 SingleProducerSequencer */
-    private final Sequencer    sequencer;
-
-    ProcessingSequenceBarrier(final Sequencer sequencer, final WaitStrategy waitStrategy, final Sequence cursorSequence,
-                              final Sequence[] dependentSequences) {
+    ProcessingSequenceBarrier(
+        final Sequencer sequencer,
+        final WaitStrategy waitStrategy,
+        final Sequence cursorSequence,
+        final Sequence[] dependentSequences)
+    {
         this.sequencer = sequencer;
         this.waitStrategy = waitStrategy;
         this.cursorSequence = cursorSequence;
-        if (0 == dependentSequences.length) {
+
+        // 如果消费者不依赖于其它的消费者，那么只需要与生产者的进度进行协调
+        if (0 == dependentSequences.length)
+        {
             dependentSequence = cursorSequence;
-        } else {
+        }
+        else
+        {
+            // 如果依赖于其它消费者，那么追踪其它消费者的进度。
             dependentSequence = new FixedSequenceGroup(dependentSequences);
         }
     }
 
-    /**
-     * 等待生产者生产出更多的产品用来消费
-     * waitFor方法第一个参数是消费者期望消费的索引序列号，
-     * cursorSequence是生产者的current，
-     * 返回值availableSequence是实际可消费的索引号，这个值返回后，生产者还要做检查，就是通过最下面的 getHighestPublishedSequence方法：
-     */
     @Override
-    public long waitFor(final long sequence) throws AlertException, InterruptedException, TimeoutException {
-        //先检测是否已通知生产者，通知过则发异常
+    public long waitFor(final long sequence)
+        throws AlertException, InterruptedException, TimeoutException
+    {
         checkAlert();
 
-        //根据等待策略来等待可用的序列值
         long availableSequence = waitStrategy.waitFor(sequence, cursorSequence, dependentSequence, this);
 
-        //如果可用的序列值小于请求的序列，那么直接返回可用的序列。
-        if (availableSequence < sequence) {
+        // 目标sequence还未发布，超时了
+        if (availableSequence < sequence)
+        {
             return availableSequence;
         }
 
-        //availableSequence >= next时，检查生产者的位置信息的标志是否正常.这个是和生产者的publish方法联系起来的. 否则，返回能使用（已发布事件）的最大的序列值，
-        //消费者可以在此追赶生产者
+        // 目标sequence已经发布了，这里获取真正的最大序号(和生产者模型有关)
         return sequencer.getHighestPublishedSequence(sequence, availableSequence);
     }
 
     @Override
-    public long getCursor() {
+    public long getCursor()
+    {
+        // 这里实际返回的是依赖的生产者/消费者的进度 - 因为当依赖其它消费者时，查询生产者进度对于等待是没有意义的
         return dependentSequence.get();
     }
 
     @Override
-    public boolean isAlerted() {
+    public boolean isAlerted()
+    {
         return alerted;
     }
 
     @Override
-    public void alert() {
-        //设置通知标记
+    public void alert()
+    {
+        // 标记为被中断，并唤醒正在等待的消费者
         alerted = true;
-        //如果有线程以阻塞的方式等待序列，将其唤醒。
         waitStrategy.signalAllWhenBlocking();
     }
 
     @Override
-    public void clearAlert() {
+    public void clearAlert()
+    {
         alerted = false;
     }
 
-    ////循环检查是否有其他线程已唤醒消费者,是的话则抛异常,等同于是否已解除屏障
     @Override
-    public void checkAlert() throws AlertException {
-        if (alerted) {
+    public void checkAlert() throws AlertException
+    {
+        if (alerted)
+        {
             throw AlertException.INSTANCE;
         }
     }

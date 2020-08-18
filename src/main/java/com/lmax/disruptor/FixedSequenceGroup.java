@@ -20,9 +20,14 @@ import java.util.Arrays;
 import com.lmax.disruptor.util.Util;
 
 /**
+ * 固定Sequence数量的Sequence组
+ * 用一个对象代替一组对象.(隐藏一些细节，eg:隐藏查找序号最小的Sequence)
+ * 只支持获取，不支持更新
+ *
  * Hides a group of Sequences behind a single Sequence
  */
-public final class FixedSequenceGroup extends Sequence {
+public final class FixedSequenceGroup extends Sequence
+{
     private final Sequence[] sequences;
 
     /**
@@ -30,22 +35,27 @@ public final class FixedSequenceGroup extends Sequence {
      *
      * @param sequences the list of sequences to be tracked under this sequence group
      */
-    public FixedSequenceGroup(Sequence[] sequences) {
+    public FixedSequenceGroup(Sequence[] sequences)
+    {
         this.sequences = Arrays.copyOf(sequences, sequences.length);
     }
 
     /**
-     * Get the minimum sequence value for the group.
+	 * 一组Sequence的进度就是Sequence最小的那个
+     *
+	 * Get the minimum sequence value for the group.
      *
      * @return the minimum sequence value for the group.
      */
     @Override
-    public long get() {
+    public long get()
+    {
         return Util.getMinimumSequence(sequences);
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return Arrays.toString(sequences);
     }
 
@@ -53,7 +63,8 @@ public final class FixedSequenceGroup extends Sequence {
      * Not supported.
      */
     @Override
-    public void set(long value) {
+    public void set(long value)
+    {
         throw new UnsupportedOperationException();
     }
 
@@ -61,7 +72,8 @@ public final class FixedSequenceGroup extends Sequence {
      * Not supported.
      */
     @Override
-    public boolean compareAndSet(long expectedValue, long newValue) {
+    public boolean compareAndSet(long expectedValue, long newValue)
+    {
         throw new UnsupportedOperationException();
     }
 
@@ -69,7 +81,8 @@ public final class FixedSequenceGroup extends Sequence {
      * Not supported.
      */
     @Override
-    public long incrementAndGet() {
+    public long incrementAndGet()
+    {
         throw new UnsupportedOperationException();
     }
 
@@ -77,7 +90,8 @@ public final class FixedSequenceGroup extends Sequence {
      * Not supported.
      */
     @Override
-    public long addAndGet(long increment) {
+    public long addAndGet(long increment)
+    {
         throw new UnsupportedOperationException();
     }
 }

@@ -23,56 +23,81 @@ import com.lmax.disruptor.SequenceBarrier;
 import java.util.concurrent.Executor;
 
 /**
+ * 单事件处理器消费者信息。
+ * (单个EventProcessor处理所有的事件的消费者)
+ *
  * <p>Wrapper class to tie together a particular event processing stage</p>
  * <p>
  * <p>Tracks the event processor instance, the event handler instance, and sequence barrier which the stage is attached to.</p>
  *
  * @param <T> the type of the configured {@link EventHandler}
  */
-class EventProcessorInfo<T> implements ConsumerInfo {
-
-    private final EventProcessor          eventprocessor;
+class EventProcessorInfo<T> implements ConsumerInfo
+{
+	/**
+	 * 事件处理器，该EventProcessor用于处理所有的事件，目前其实就是{@link com.lmax.disruptor.BatchEventProcessor}。
+	 * {@link com.lmax.disruptor.BatchEventProcessor}
+	 * {@link com.lmax.disruptor.WorkProcessor}
+	 */
+    private final EventProcessor eventprocessor;
+	/**
+	 * 事件处理方法
+	 */
     private final EventHandler<? super T> handler;
-    private final SequenceBarrier         barrier;
-    private boolean                       endOfChain = true;
+	/**
+	 * 消费者的序列屏障
+	 */
+    private final SequenceBarrier barrier;
+	/**
+	 * 是否是消费链的末端消费者(没有后继消费者)
+	 */
+    private boolean endOfChain = true;
 
-    EventProcessorInfo(final EventProcessor eventprocessor, final EventHandler<? super T> handler,
-                       final SequenceBarrier barrier) {
+    EventProcessorInfo(
+        final EventProcessor eventprocessor, final EventHandler<? super T> handler, final SequenceBarrier barrier)
+    {
         this.eventprocessor = eventprocessor;
         this.handler = handler;
         this.barrier = barrier;
     }
 
-    public EventProcessor getEventProcessor() {
+    public EventProcessor getEventProcessor()
+    {
         return eventprocessor;
     }
 
     @Override
-    public Sequence[] getSequences() {
-        return new Sequence[] { eventprocessor.getSequence() };
+    public Sequence[] getSequences()
+    {
+        return new Sequence[]{eventprocessor.getSequence()};
     }
 
-    public EventHandler<? super T> getHandler() {
+    public EventHandler<? super T> getHandler()
+    {
         return handler;
     }
 
     @Override
-    public SequenceBarrier getBarrier() {
+    public SequenceBarrier getBarrier()
+    {
         return barrier;
     }
 
     @Override
-    public boolean isEndOfChain() {
+    public boolean isEndOfChain()
+    {
         return endOfChain;
     }
 
     @Override
-    public void start(final Executor executor) {
+    public void start(final Executor executor)
+    {
         executor.execute(eventprocessor);
     }
 
     @Override
-    public void halt() {
+    public void halt()
+    {
         eventprocessor.halt();
     }
 
@@ -80,12 +105,14 @@ class EventProcessorInfo<T> implements ConsumerInfo {
      *
      */
     @Override
-    public void markAsUsedInBarrier() {
+    public void markAsUsedInBarrier()
+    {
         endOfChain = false;
     }
 
     @Override
-    public boolean isRunning() {
+    public boolean isRunning()
+    {
         return eventprocessor.isRunning();
     }
 }

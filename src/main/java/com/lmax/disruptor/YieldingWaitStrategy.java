@@ -16,32 +16,34 @@
 package com.lmax.disruptor;
 
 
-import com.lmax.disruptor.Sequence;
-import com.lmax.disruptor.SequenceBarrier;
-import com.lmax.disruptor.WaitStrategy;
-import com.lmax.disruptor.AlertException;
-
 /**
- * 先尝试一百次，再不满足条件，当前线程就yield，让其他线程先执行
- * Yielding strategy that uses a Thread.yield() for {@link com.lmax.disruptor.EventProcessor}s waiting on a barrier
+ * 该策略在尝试一定次数的自旋等待(空循环)之后使用尝试让出cpu。
+ * 该策略将会占用大量的CPU资源(100%)，但是比{@link BusySpinWaitStrategy}策略更容易在其他线程需要CPU时让出CPU。
+ * <p>
+ * 它有着较低的延迟、较高的吞吐量，以及较高CPU占用率。当CPU数量足够时，可以使用该策略。
+ *
+ * Yielding strategy that uses a Thread.yield() for {@link EventProcessor}s waiting on a barrier
  * after an initially spinning.
  * <p>
  * This strategy will use 100% CPU, but will more readily give up the CPU than a busy spin strategy if other threads
  * require CPU resource.
  */
-public final class YieldingWaitStrategy implements WaitStrategy {
-
+public final class YieldingWaitStrategy implements WaitStrategy
+{
     private static final int SPIN_TRIES = 100;
 
     @Override
-    public long waitFor(final long sequence, Sequence cursor, final Sequence dependentSequence,
-                        final SequenceBarrier barrier) throws AlertException, InterruptedException {
+    public long waitFor(
+        final long sequence, Sequence cursor, final Sequence dependentSequence, final SequenceBarrier barrier)
+        throws AlertException, InterruptedException
+    {
         long availableSequence;
+        // 自旋尝试次数
         int counter = SPIN_TRIES;
 
-        //循环，如果生产的最大序列号小于消费者需要的序列号，继续等待，等待次数超过counter次，线程yield
-        //这里dependentSequence就是cursorSequence,在ProcessorSequencerBarrier构造函数中可以看到
-        while ((availableSequence = dependentSequence.get()) < sequence) {
+        while ((availableSequence = dependentSequence.get()) < sequence)
+        {
+            // 当依赖的sequence还未完成对应序号的事件消费时，执行等待方法
             counter = applyWaitMethod(barrier, counter);
         }
 
@@ -49,16 +51,23 @@ public final class YieldingWaitStrategy implements WaitStrategy {
     }
 
     @Override
-    public void signalAllWhenBlocking() {
+    public void signalAllWhenBlocking()
+    {
     }
 
-    //counter大于0则减一返回，否则当前线程yield
-    private int applyWaitMethod(final SequenceBarrier barrier, int counter) throws AlertException {
+    private int applyWaitMethod(final SequenceBarrier barrier, int counter)
+        throws AlertException
+    {
         barrier.checkAlert();
 
-        if (0 == counter) {
+        // 当计数变为0时尝试让出CPU资源，避免大量占用CPU资源
+        if (0 == counter)
+        {
             Thread.yield();
-        } else {
+        }
+        else
+        {
+        	// 当计数大于0时，空循环。(有最高的响应性，但是对CPU占用太高)
             --counter;
         }
 

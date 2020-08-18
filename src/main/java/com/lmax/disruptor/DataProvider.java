@@ -16,9 +16,13 @@
 package com.lmax.disruptor;
 
 /**
- * 提供获取Event对象的方法
+ * 数据提供者，目前就是 {@link RingBuffer}
+ * @param <T>
  */
-public interface DataProvider<T> {
-
+public interface DataProvider<T>
+{
+	/**
+	 * 根据指定序号获取data
+	 */
     T get(long sequence);
 }
