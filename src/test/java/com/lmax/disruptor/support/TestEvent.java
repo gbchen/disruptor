@@ -27,6 +27,7 @@ public final class TestEvent
 
     public static final EventFactory<TestEvent> EVENT_FACTORY = new EventFactory<TestEvent>()
     {
+        @Override
         public TestEvent newInstance()
         {
             return new TestEvent();

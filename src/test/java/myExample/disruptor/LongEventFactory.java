@@ -13,6 +13,7 @@ public class LongEventFactory implements EventFactory {
      * 初始化操作
      * @return 数据单元
      */
+    @Override
     public Object newInstance() {
         return new LongEvent();
     }

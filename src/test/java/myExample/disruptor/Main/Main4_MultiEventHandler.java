@@ -25,7 +25,7 @@ public class Main4_MultiEventHandler {
 
     public static Long MAX_OPS = 2L;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         // 初始化线程池
         ExecutorService executor = Executors.newCachedThreadPool();
         LongEventFactory factory = new LongEventFactory();
@@ -89,6 +89,7 @@ public class Main4_MultiEventHandler {
 
         for (long l = 0; l < MAX_OPS; l++) {
             longEventProducerWithTranslator.onData(l);
+            Thread.sleep(20000);
         }
 
     }

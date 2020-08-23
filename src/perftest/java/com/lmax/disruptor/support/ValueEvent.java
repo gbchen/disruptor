@@ -33,6 +33,7 @@ public final class ValueEvent
 
     public static final EventFactory<ValueEvent> EVENT_FACTORY = new EventFactory<ValueEvent>()
     {
+        @Override
         public ValueEvent newInstance()
         {
             return new ValueEvent();

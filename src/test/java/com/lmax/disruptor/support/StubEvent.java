@@ -60,6 +60,7 @@ public final class StubEvent {
 
     public static final EventFactory<StubEvent> EVENT_FACTORY = new EventFactory<StubEvent>() {
 
+        @Override
         public StubEvent newInstance() {
             return new StubEvent(-1);
         }

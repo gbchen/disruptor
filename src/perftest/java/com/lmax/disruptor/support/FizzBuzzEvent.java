@@ -57,6 +57,7 @@ public final class FizzBuzzEvent
 
     public static final EventFactory<FizzBuzzEvent> EVENT_FACTORY = new EventFactory<FizzBuzzEvent>()
     {
+        @Override
         public FizzBuzzEvent newInstance()
         {
             return new FizzBuzzEvent();
